@@ -141,7 +141,8 @@ body {
 
   /* 強制每頁都是 A4 大小、完整滿版 */
   .a4-page {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     width: 210mm !important;
     min-height: 297mm !important;
     height: 297mm !important;

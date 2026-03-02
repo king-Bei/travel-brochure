@@ -51,7 +51,7 @@ export function PageWrapper({ children, title, icon, hideHeaderFooter = false }:
             )}
 
             {/* 內容區域 */}
-            <div className="flex-grow flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col relative w-full">
                 {children}
             </div>
 

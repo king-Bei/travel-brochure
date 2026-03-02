@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { storage, BrochureMeta } from '../lib/storage';
 import { FileText, Plus, Copy, Trash2, Calendar } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import type { BrochureData } from '../types';
 
 interface DashboardProps {
     onSelectBrochure: (id: string) => void;
@@ -9,8 +11,56 @@ interface DashboardProps {
 export function Dashboard({ onSelectBrochure }: DashboardProps) {
     const [brochures, setBrochures] = useState<BrochureMeta[]>([]);
 
+    const loadList = async () => {
+        let mergedList: BrochureMeta[] = [];
+        let hasLoadedCloud = false;
+
+        if (supabase) {
+            try {
+                const timeoutPromise = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('TIMEOUT')), 8000)
+                );
+                // 讀取這張表時，只拿取部分欄位減少流量
+                const fetchPromise = supabase.from('brochures').select('id, data, updated_at, created_at');
+                const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
+                if (!error && data) {
+                    const cloudList: BrochureMeta[] = data.map((row: any) => {
+                        const brochureData = row.data as BrochureData;
+                        return {
+                            id: row.id,
+                            title: brochureData.title || '未命名手冊',
+                            agency: brochureData.agency || '',
+                            createdAt: row.created_at || new Date().toISOString(),
+                            updatedAt: row.updated_at || new Date().toISOString(),
+                        };
+                    });
+
+                    mergedList = [...cloudList];
+                    hasLoadedCloud = true;
+                }
+            } catch (e) {
+                console.warn('載入雲端列表失敗，降級為本地列表', e);
+            }
+        }
+
+        const localList = await storage.getList();
+
+        if (hasLoadedCloud) {
+            // 合併本地和雲端列表 (過濾掉雲端已有的)
+            const cloudIds = new Set(mergedList.map(m => m.id));
+            mergedList = [...mergedList, ...localList.filter(l => !cloudIds.has(l.id))];
+        } else {
+            mergedList = localList;
+        }
+
+        // 以更新時間排序 (新到舊)
+        mergedList.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        setBrochures(mergedList);
+    };
+
     useEffect(() => {
-        storage.getList().then(setBrochures);
+        loadList();
     }, []);
 
     const handleCreate = async () => {
@@ -20,17 +70,44 @@ export function Dashboard({ onSelectBrochure }: DashboardProps) {
 
     const handleDuplicate = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        await storage.duplicateBrochure(id);
-        const list = await storage.getList();
-        setBrochures(list); // 重新載入列表
+
+        // 如果是從雲端複製，我們需要先拿到最新資料
+        let dataToDuplicate: BrochureData | null = null;
+        if (supabase) {
+            const { data } = await supabase.from('brochures').select('data').eq('id', id).single();
+            if (data && data.data) {
+                dataToDuplicate = data.data as BrochureData;
+            }
+        }
+
+        // 如果雲端拿不到，再從本地拿
+        if (!dataToDuplicate) {
+            dataToDuplicate = await storage.getBrochure(id);
+        }
+
+        if (!dataToDuplicate) return;
+
+        const newId = crypto.randomUUID();
+        const duplicatedData = {
+            ...dataToDuplicate,
+            title: `${dataToDuplicate.title} (複製)`,
+        };
+        await storage.saveBrochure(newId, duplicatedData);
+        await loadList(); // 重新載入列表
     };
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         if (window.confirm('確定要刪除這份手冊嗎？這個動作無法復原。')) {
+            if (supabase) {
+                try {
+                    await supabase.from('brochures').delete().eq('id', id);
+                } catch (error) {
+                    console.error('刪除雲端資料發生錯誤', error);
+                }
+            }
             await storage.deleteBrochure(id);
-            const list = await storage.getList();
-            setBrochures(list);
+            await loadList();
         }
     };
 
