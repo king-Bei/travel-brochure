@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  travel-brochure:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: travel-brochure
+    ports:
+      - "8080:80"
+    restart: unless-stopped
