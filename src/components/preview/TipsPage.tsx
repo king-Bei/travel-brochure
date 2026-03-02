@@ -107,7 +107,7 @@ export function TipsPage() {
                     <h3 className="text-lg font-bold mb-2 tracking-widest text-gray-800 border-b border-gray-100 pb-1 inline-block">{item.label}</h3>
 
                     {item.content && (
-                      <p className="text-gray-600 leading-relaxed text-justify whitespace-pre-wrap mb-4 font-medium italic">
+                      <p className="text-gray-600 leading-relaxed text-justify whitespace-pre-wrap mb-4 font-medium">
                         {parseRichText(item.content, data.theme.primary)}
                       </p>
                     )}
