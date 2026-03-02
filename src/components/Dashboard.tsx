@@ -102,9 +102,10 @@ export function Dashboard({ onSelectBrochure }: DashboardProps) {
         if (window.confirm('確定要刪除這份手冊嗎？這個動作無法復原。')) {
             if (supabase) {
                 try {
-                    const { error } = await supabase.from('brochures').delete().eq('id', id);
-                    if (error) {
-                        console.warn('實體刪除失敗，嘗試使用軟刪除 (標記作廢隱藏)...', error);
+                    // 加上 .select() 來驗證是否真的有刪除到資料（RLS 阻擋通常不會報錯，而是回傳 0 筆資料）
+                    const { data, error } = await supabase.from('brochures').delete().eq('id', id).select();
+                    if (error || !data || data.length === 0) {
+                        console.warn('實體刪除失敗或被安全機制阻擋，嘗試使用軟刪除 (標記作廢隱藏)...', error);
                         // 取得當前資料並加上 isDeleted 標記，因為 update 沒有被限制
                         const { data: existingData } = await supabase.from('brochures').select('data').eq('id', id).single();
                         if (existingData && existingData.data) {
