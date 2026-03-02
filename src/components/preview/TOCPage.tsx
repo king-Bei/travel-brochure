@@ -19,6 +19,53 @@ export function TOCPage() {
         'gridTips'
     ];
 
+    // 建立一個估算各區塊預期有幾頁的函數
+    const getPageCount = (sectionId: SectionId): number => {
+        switch (sectionId) {
+            case 'flight':
+                return 1; // 航班資訊通常 1 頁
+            case 'attraction':
+                // 景點每頁最多排幾項需視排版而定，這裡做一個簡單估算：12個一頁
+                if (!data.attractions || data.attractions.length === 0) return 0;
+                return Math.ceil(data.attractions.length / 12) || 1;
+            case 'hotel':
+                return 1; // 住宿安排清單 1 頁
+            case 'hotelDetail':
+                // 飯店詳細介紹，每個飯店一頁
+                if (!data.hotelDetails || data.hotelDetails.length === 0) return 0;
+                return data.hotelDetails.length;
+            case 'map':
+                return data.mapPage?.src ? 1 : 0;
+            case 'itinerary':
+                // 行程清單，一般預估 1 頁（需視實際高度，這裡為了簡易目錄抓 1 頁）
+                return 1;
+            case 'packing':
+                return 1;
+            case 'tips':
+            case 'gridTips':
+                // 注意事項通常 1 頁
+                if (sectionId === 'gridTips' && (!data.gridTips || data.gridTips.length === 0)) return 0;
+                return 1;
+            default:
+                return 0;
+        }
+    };
+
+    // 計算每個啟用的目錄項目所在的起始頁碼
+    const visibleSections = currentOrder.filter(id => data.tocSettings?.[id] !== false);
+
+    // 第 1 頁為目錄自己，所以內容章節從第 2 頁開始
+    let currentPageAcc = 2;
+    const pageNumbers: Record<string, number> = {};
+
+    visibleSections.forEach((id) => {
+        const count = getPageCount(id as SectionId);
+        if (count > 0) {
+            pageNumbers[id] = currentPageAcc;
+            currentPageAcc += count;
+        }
+    });
+
     const renderTocItem = (sectionId: SectionId) => {
         const IconComponent = ({
             flight: Plane,
@@ -58,15 +105,27 @@ export function TOCPage() {
 
         if (isEmpty) return null;
 
+        const pageNum = pageNumbers[sectionId];
+
         return (
             <div key={sectionId} className="space-y-2">
-                <div className="flex justify-between items-end border-b-2 border-gray-100 border-dotted pb-2 mt-4">
-                    <div className="flex items-center gap-3">
+                <div className="flex justify-between items-end pb-2 mt-4 relative">
+                    <div className="flex items-center gap-3 bg-white pr-2 z-10">
                         <div className="p-1 px-2 rounded bg-gray-50 border border-gray-100 shadow-sm" style={{ color: data.theme.primary }}>
                             <IconComponent size={16} />
                         </div>
                         <span className="font-bold text-gray-800" style={{ color: data.theme.primary }}>{label}</span>
                     </div>
+
+                    {/* 點點連線 */}
+                    <div className="absolute left-0 right-0 bottom-4 border-b-[3px] border-dotted border-gray-200 z-0"></div>
+
+                    {/* 頁次顯示 */}
+                    {pageNum && (
+                        <div className="bg-white pl-2 z-10 font-medium text-gray-500 text-sm pb-0.5">
+                            {pageNum}
+                        </div>
+                    )}
                 </div>
                 {sectionId === 'itinerary' && data.itineraries && data.itineraries.length > 0 && (
                     <div className="pl-12 space-y-4 pt-2">
@@ -94,7 +153,21 @@ export function TOCPage() {
 
     return (
         <PageWrapper title="目錄 (Table of Contents)" icon={<List size={24} />}>
-            <div className="space-y-8 text-lg mt-10 px-8">
+            {(data.tocText || data.tocImage) && (
+                <div className="mt-2 mb-6 px-8 space-y-6">
+                    {data.tocImage && (
+                        <div className="w-full h-48 overflow-hidden rounded-xl shadow-sm border border-gray-100">
+                            <img src={data.tocImage} alt="Welcome" className="w-full h-full object-cover" />
+                        </div>
+                    )}
+                    {data.tocText && (
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-[15px]">
+                            {data.tocText}
+                        </p>
+                    )}
+                </div>
+            )}
+            <div className={`space-y-8 text-lg px-8 ${data.tocText || data.tocImage ? 'mt-4' : 'mt-10'}`}>
                 {currentOrder
                     .filter(sectionId => data.tocSettings?.[sectionId] !== false)
                     .map(renderTocItem)}

@@ -12,8 +12,15 @@ export function CoverPage() {
     return `${date.getFullYear()} . ${(date.getMonth() + 1).toString().padStart(2, '0')} . ${date.getDate().toString().padStart(2, '0')}`;
   };
 
+  const formatEndDate = (dateStr: string, duration: number) => {
+    if (!dateStr || duration < 1) return '____ / __ / __';
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + duration - 1);
+    return `${date.getFullYear()} . ${(date.getMonth() + 1).toString().padStart(2, '0')} . ${date.getDate().toString().padStart(2, '0')}`;
+  };
+
   return (
-    <PageWrapper hideHeaderFooter={true}>
+    <PageWrapper hideHeaderFooter={true} className="cover-page">
       <div className="absolute inset-0 flex flex-col pt-12">
         {/* 頂部裝飾條 */}
         <div
@@ -41,87 +48,61 @@ export function CoverPage() {
         {/* 內容主體區 */}
         <div className={`relative z-10 flex flex-col h-full px-16 ${data.coverImage ? 'mt-[35%]' : 'mt-12'}`}>
 
-          {/* Header: Logo & Agency */}
-          <div className="flex flex-col items-center mb-12">
-            {data.logo ? (
-              <div className="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-sm mb-6 max-w-[200px]">
-                <img src={data.logo} alt="Logo" className="w-full h-auto object-contain max-h-24" />
-              </div>
-            ) : (
-              <div className="h-16 mb-6" /> // 保留空白
-            )}
-
-            {data.agency && (
-              <p className="tracking-[0.2em] font-medium text-gray-500 uppercase text-sm">
-                {data.agency}
-              </p>
-            )}
+          {/* Header 區塊：移除 Logo，僅留空白讓排版不會擠到頂端 */}
+          <div className="flex flex-col items-center mb-12 h-16">
           </div>
 
-          {/* Main Title */}
+          {/* Main Title & Subtitle */}
           <div className="flex-grow flex flex-col items-center justify-center text-center -mt-12">
             <div className="w-16 h-1 mb-8 rounded-full" style={{ backgroundColor: data.theme.primary }} />
             <h1
-              className="text-5xl font-black mb-8 leading-tight tracking-wide"
+              className="text-5xl font-black mb-4 leading-tight tracking-wide"
               style={{ color: data.theme.primary }}
             >
               {data.title || '旅遊說明會手冊'}
             </h1>
-            <div className="w-16 h-1 mt-2 rounded-full" style={{ backgroundColor: data.theme.primary }} />
+            {data.subTitle && (
+              <h2 className="text-2xl font-bold mb-4 tracking-widest opacity-80" style={{ color: data.theme.primary }}>
+                {data.subTitle}
+              </h2>
+            )}
+            <div className="w-16 h-1 mt-4 rounded-full" style={{ backgroundColor: data.theme.primary }} />
           </div>
 
-          {/* Info Grid (Bottom) */}
-          <div className="grid grid-cols-2 gap-8 pb-16 mt-auto">
-            {/* 左欄：日期時間 */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/50 backdrop-blur shadow-sm border border-white/40">
-                <div className="p-3 rounded-full bg-white" style={{ color: data.theme.primary }}>
-                  <Calendar size={24} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Date</p>
-                  <p className="font-semibold text-lg">{formatDate(data.startDate)}</p>
-                  <p className="text-sm font-medium mt-0.5 text-gray-600">{data.duration} 天 {data.duration - 1} 夜</p>
-                </div>
-              </div>
+          {/* Bottom Info Section: 日期、地點、Logo、旅行社名稱 */}
+          <div className="mt-auto flex flex-col w-full pb-8">
+            {/* 上方分隔線 */}
+            <div className="w-full border-t border-dashed mb-6" style={{ borderColor: `${data.theme.primary}80` }} />
 
-              {(data.meetingPoint || data.meetingTime) && (
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/50 backdrop-blur shadow-sm border border-white/40">
-                  <div className="p-3 rounded-full bg-white" style={{ color: data.theme.primary }}>
-                    <MapPin size={24} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Meeting</p>
-                    <p className="font-semibold">{data.meetingPoint || '未指定地點'}</p>
-                    <p className="text-sm font-medium mt-0.5 text-gray-600">{data.meetingTime || '未指定時間'}</p>
-                  </div>
-                </div>
-              )}
+            {/* 日期與地點列 */}
+            <div className="w-full flex justify-between items-center px-8 mb-6 text-xl tracking-wider font-semibold" style={{ color: data.theme.primary }}>
+              <div className="flex items-center gap-4">
+                <Calendar size={24} />
+                <span>{formatDate(data.startDate)}</span>
+                <span className="text-gray-400 font-normal mx-2">~</span>
+                <span>{formatEndDate(data.startDate, data.duration)}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <MapPin size={24} />
+                <span>{data.destination || '未指派地點'}</span>
+              </div>
             </div>
 
-            {/* 右欄：人員資訊 */}
-            <div className="space-y-4">
-              {(data.tourLeader || data.tourLeaderPhone) && (
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/50 backdrop-blur shadow-sm border border-white/40">
-                  <div className="p-3 rounded-full bg-white" style={{ color: data.theme.primary }}>
-                    <Users size={24} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Tour Leader</p>
-                    <p className="font-semibold text-lg">{data.tourLeader || '敬請期待'}</p>
-                    {data.tourLeaderPhone && (
-                      <p className="text-sm font-medium mt-0.5 text-gray-600 flex items-center gap-1">
-                        <Phone size={14} /> {data.tourLeaderPhone}
-                      </p>
-                    )}
-                  </div>
+            {/* 下方分隔線 */}
+            <div className="w-full border-b border-dashed mb-10" style={{ borderColor: `${data.theme.primary}80` }} />
+
+            {/* Logo 與 旅行社名稱 (置中排列) */}
+            <div className="flex flex-col items-center justify-center gap-6">
+              {data.logo && (
+                <div className="bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-sm max-w-[200px]">
+                  <img src={data.logo} alt="Logo" className="w-full h-auto object-contain max-h-24" />
                 </div>
               )}
-
-              {/* 裝飾性區塊填補空白 */}
-              <div className="h-full rounded-xl border-2 border-dashed border-white/50 flex items-center justify-center opacity-50">
-                <MapPin size={32} style={{ color: data.theme.primary }} className="opacity-20" />
-              </div>
+              {data.agency && (
+                <p className="tracking-[0.2em] font-black text-xl uppercase opacity-90" style={{ color: data.theme.primary }}>
+                  {data.agency}
+                </p>
+              )}
             </div>
           </div>
 

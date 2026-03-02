@@ -127,6 +127,8 @@ export interface BrochureData {
   logo: string;
   coverImage?: string; // 新增封面滿版圖支援
   title: string;
+  subTitle?: string; // 新增副標題
+  destination?: string; // 新增旅遊地點
   startDate: string;
   duration: number;
   tourLeader: string;
@@ -152,6 +154,10 @@ export interface BrochureData {
   theme: ThemeColors;
   sectionOrder: SectionId[];   // 新增：版塊排序
   tocSettings?: Record<string, boolean>; // 新增：目錄顯示設定
+  tocText?: string; // 新增目錄自訂文字
+  tocImage?: string; // 新增目錄自訂圖片
+  headerLogo?: string; // 新增頁首專屬(客戶) Logo
+  headerText?: string; // 新增頁首自訂名稱(客戶名稱)
 }
 
 export const defaultTheme: ThemeColors = {
@@ -260,6 +266,8 @@ export function createDefaultData(): BrochureData {
     agency: '',
     logo: '',
     title: '',
+    subTitle: '',
+    destination: '',
     startDate: '',
     duration: 5,
     tourLeader: '',
@@ -309,6 +317,10 @@ export function createDefaultData(): BrochureData {
     theme: { ...defaultTheme },
     sectionOrder: [...defaultSectionOrder],
     tocSettings: defaultSectionOrder.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
+    tocText: '',
+    tocImage: '',
+    headerLogo: '',
+    headerText: '',
   };
 }
 
