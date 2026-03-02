@@ -156,6 +156,7 @@ export interface BrochureData {
   tocSettings?: Record<string, boolean>; // 新增：目錄顯示設定
   tocText?: string; // 新增目錄自訂文字
   tocImage?: string; // 新增目錄自訂圖片
+  showTOCItineraryDetails?: boolean; // 新增：目錄是否顯示行程詳情
   headerLogo?: string; // 新增頁首專屬(客戶) Logo
   headerText?: string; // 新增頁首自訂名稱(客戶名稱)
 }
@@ -319,6 +320,7 @@ export function createDefaultData(): BrochureData {
     tocSettings: defaultSectionOrder.reduce((acc, id) => ({ ...acc, [id]: true }), {}),
     tocText: '',
     tocImage: '',
+    showTOCItineraryDetails: true,
     headerLogo: '',
     headerText: '',
   };

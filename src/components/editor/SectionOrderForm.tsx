@@ -93,6 +93,19 @@ export function SectionOrderForm() {
                                 />
                                 顯示於目錄 (Show in TOC)
                             </label>
+                            {sectionId === 'itinerary' && data.tocSettings?.[sectionId] !== false && (
+                                <label className="ml-7 flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase tracking-widest cursor-pointer hover:text-blue-600 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.showTOCItineraryDetails !== false}
+                                        onChange={(e) => {
+                                            updateData({ showTOCItineraryDetails: e.target.checked });
+                                        }}
+                                        className="w-3 h-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    顯示行程詳情 (Show Day Details)
+                                </label>
+                            )}
                         </div>
                         <div className="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
                             <button

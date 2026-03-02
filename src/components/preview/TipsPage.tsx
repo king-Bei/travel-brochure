@@ -1,89 +1,16 @@
 import React from 'react';
 import { useBrochure } from '../../context/BrochureContext';
-import { Lightbulb, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import { parseRichText } from '../../lib/textParser';
-
-// 預設 SVG 圖示對應表 (如果使用者沒有自行上傳)
-const defaultIcons: Record<string, string> = {
-  clothes: '👕',
-  items: '🎒',
-  weather: '☀️',
-  time: '⏰',
-  power: '🔌',
-  money: '💵',
-  customs: '🛂',
-  comms: '📱',
-  bag: '🧳',
-};
-
-const CLASSIC_TIPS_LABELS = {
-  airport: '機 場 集 合 與 行 李 準 備 篇',
-  security: '安 檢 規 定',
-  immigration: '出 境 流 程',
-  luggage: '托 運 行 李 相 關 規 定',
-  destination: '目 的 地 旅 遊 注 意 事 項',
-};
+import { getTipsPages } from '../../lib/pagination';
 
 export function TipsPage() {
   const { data } = useBrochure();
 
-  // 將資料分頁
+  // 使用統一的分頁工具
   const pages = React.useMemo(() => {
-    const pagesArray: any[][] = [];
-    let currentPageItems: any[] = [];
-
-    const currentOrder = data.tips.order || Object.keys(CLASSIC_TIPS_LABELS);
-
-    currentOrder.forEach((key) => {
-      const defaultLabel = CLASSIC_TIPS_LABELS[key as keyof typeof CLASSIC_TIPS_LABELS];
-      if (!defaultLabel) return;
-      const label = data.tips.customLabels?.[key] ?? defaultLabel;
-
-      const content = data.tips[key as keyof typeof CLASSIC_TIPS_LABELS] as string;
-      const sections = key === 'destination' ? data.tips.destinationSections : [];
-
-      if (!content && (!sections || sections.length === 0)) return;
-
-      let currentMainItem = { key, label, content: content || '', sections: [] as any[] };
-
-      // 是否使用者勾選強迫換頁
-      const forcePageBreak = data.tips.pageBreaks?.[key];
-
-      // 如果有設定換頁，且當前頁面不是空的，就換新頁
-      if (forcePageBreak && currentPageItems.length > 0) {
-        pagesArray.push(currentPageItems);
-        currentPageItems = [];
-      }
-
-      currentPageItems.push(currentMainItem);
-
-      // 處理額外的子段落 (例如 destinationSections)
-      if (sections && sections.length > 0) {
-        sections.forEach((sec, sIdx) => {
-          if (sec.pageBreak && currentMainItem.sections.length > 0) {
-            // 如果這個子標題設定了強迫換頁，且當前已有內容，就先把累積的推出去換頁
-            pagesArray.push(currentPageItems);
-            currentPageItems = [];
-            currentMainItem = { key: `${key}-cont-${sIdx}`, label: `${label} (續)`, content: '', sections: [] };
-            currentPageItems.push(currentMainItem);
-          } else if (sec.pageBreak && currentMainItem.content) {
-            // 處理如果這是第一個 section 但上面有預設內容也要換頁的情況
-            pagesArray.push(currentPageItems);
-            currentPageItems = [];
-            currentMainItem = { key: `${key}-cont-${sIdx}`, label: `${label} (續)`, content: '', sections: [] };
-            currentPageItems.push(currentMainItem);
-          }
-          currentMainItem.sections.push(sec);
-        });
-      }
-    });
-
-    if (currentPageItems.length > 0) {
-      pagesArray.push(currentPageItems);
-    }
-
-    return pagesArray;
+    return getTipsPages(data.tips);
   }, [data.tips]);
 
   if (pages.length === 0) return null;

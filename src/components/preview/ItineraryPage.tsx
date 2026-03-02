@@ -2,6 +2,7 @@ import React from 'react';
 import { useBrochure } from '../../context/BrochureContext';
 import { MapPin, Utensils, BedDouble } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
+import { getItineraryPages } from '../../lib/pagination';
 
 export function ItineraryPage() {
   const { data } = useBrochure();
@@ -14,20 +15,10 @@ export function ItineraryPage() {
     return symbols.length > 0 ? symbols.join(' / ') : '餐食自理';
   };
 
-  const pages: typeof data.itineraries[] = [];
-  let currentPage: typeof data.itineraries = [];
-
-  data.itineraries.forEach((day, index) => {
-    if (index > 0 && day.pageBreakBefore && currentPage.length > 0) {
-      pages.push(currentPage);
-      currentPage = [];
-    }
-    currentPage.push({ ...day, originalIndex: index } as any);
-  });
-
-  if (currentPage.length > 0) {
-    pages.push(currentPage);
-  }
+  // 使用統一的分頁工具
+  const pages = React.useMemo(() => {
+    return getItineraryPages(data.itineraries || []);
+  }, [data.itineraries]);
 
   return (
     <>

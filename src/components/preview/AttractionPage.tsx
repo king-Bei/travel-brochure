@@ -3,6 +3,7 @@ import { useBrochure } from '../../context/BrochureContext';
 import { Camera } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import { Attraction } from '../../types';
+import { getAttractionPages } from '../../lib/pagination';
 
 export function AttractionPage() {
     const { data } = useBrochure();
@@ -65,45 +66,9 @@ export function AttractionPage() {
         );
     };
 
-    // 將景點分支出多個頁面
+    // 使用統一的分頁工具
     const attractionPages = useMemo(() => {
-        const pages: Attraction[][] = [];
-        let currentPage: Attraction[] = [];
-
-        attractions.forEach((attraction, index) => {
-            // 如果當前頁面已經有一個景點，且當前景點是一頁兩個模式、
-            // 且前一個景點也是一頁兩個模式、且前一個沒要求分頁
-            const canFitInCurrent =
-                currentPage.length === 1 &&
-                currentPage[0].isTwoPerPage &&
-                attraction.isTwoPerPage &&
-                !currentPage[0].pageBreakAfter;
-
-            if (canFitInCurrent) {
-                currentPage.push(attraction);
-                pages.push(currentPage);
-                currentPage = [];
-            } else {
-                // 如果當前頁面本來就有東西（但沒辦法放進去），先推掉
-                if (currentPage.length > 0) {
-                    pages.push(currentPage);
-                }
-
-                currentPage = [attraction];
-
-                // 如果本景點不支援一頁兩個，或是有強制分頁，推掉
-                if (!attraction.isTwoPerPage || attraction.pageBreakAfter) {
-                    pages.push(currentPage);
-                    currentPage = [];
-                }
-            }
-        });
-
-        if (currentPage.length > 0) {
-            pages.push(currentPage);
-        }
-
-        return pages;
+        return getAttractionPages(attractions);
     }, [attractions]);
 
     return (

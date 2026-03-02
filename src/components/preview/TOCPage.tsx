@@ -3,6 +3,7 @@ import { useBrochure } from '../../context/BrochureContext';
 import { List, Plane, MapPin, Building2, Map as MapIcon, Calendar, CheckSquare, AlertCircle } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import type { SectionId } from '../../types';
+import { getSectionPageCount } from '../../lib/pagination';
 
 export function TOCPage() {
     const { data } = useBrochure();
@@ -19,38 +20,6 @@ export function TOCPage() {
         'gridTips'
     ];
 
-    // 建立一個估算各區塊預期有幾頁的函數
-    const getPageCount = (sectionId: SectionId): number => {
-        switch (sectionId) {
-            case 'flight':
-                return 1; // 航班資訊通常 1 頁
-            case 'attraction':
-                // 景點每頁最多排幾項需視排版而定，這裡做一個簡單估算：12個一頁
-                if (!data.attractions || data.attractions.length === 0) return 0;
-                return Math.ceil(data.attractions.length / 12) || 1;
-            case 'hotel':
-                return 1; // 住宿安排清單 1 頁
-            case 'hotelDetail':
-                // 飯店詳細介紹，每個飯店一頁
-                if (!data.hotelDetails || data.hotelDetails.length === 0) return 0;
-                return data.hotelDetails.length;
-            case 'map':
-                return data.mapPage?.src ? 1 : 0;
-            case 'itinerary':
-                // 行程清單，一般預估 1 頁（需視實際高度，這裡為了簡易目錄抓 1 頁）
-                return 1;
-            case 'packing':
-                return 1;
-            case 'tips':
-            case 'gridTips':
-                // 注意事項通常 1 頁
-                if (sectionId === 'gridTips' && (!data.gridTips || data.gridTips.length === 0)) return 0;
-                return 1;
-            default:
-                return 0;
-        }
-    };
-
     // 計算每個啟用的目錄項目所在的起始頁碼
     const visibleSections = currentOrder.filter(id => data.tocSettings?.[id] !== false);
 
@@ -59,7 +28,7 @@ export function TOCPage() {
     const pageNumbers: Record<string, number> = {};
 
     visibleSections.forEach((id) => {
-        const count = getPageCount(id as SectionId);
+        const count = getSectionPageCount(id as SectionId, data);
         if (count > 0) {
             pageNumbers[id] = currentPageAcc;
             currentPageAcc += count;
@@ -127,7 +96,7 @@ export function TOCPage() {
                         </div>
                     )}
                 </div>
-                {sectionId === 'itinerary' && data.itineraries && data.itineraries.length > 0 && (
+                {sectionId === 'itinerary' && data.showTOCItineraryDetails !== false && data.itineraries && data.itineraries.length > 0 && (
                     <div className="pl-12 space-y-4 pt-2">
                         {data.itineraries.map((day, i) => (
                             <div key={i} className="flex items-center gap-3 text-base text-gray-700">
