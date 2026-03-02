@@ -32,14 +32,6 @@ export function TipsPage() {
   const pages = React.useMemo(() => {
     const pagesArray: any[][] = [];
     let currentPageItems: any[] = [];
-    let currentPageChars = 0;
-    const MAX_CHARS_PER_PAGE = 1000;
-
-    const estimateChars = (text: string) => {
-      if (!text) return 0;
-      const newlines = (text.match(/\n/g) || []).length;
-      return text.length + newlines * 50;
-    };
 
     const currentOrder = data.tips.order || Object.keys(CLASSIC_TIPS_LABELS);
 
@@ -54,40 +46,35 @@ export function TipsPage() {
       if (!content && (!sections || sections.length === 0)) return;
 
       let currentMainItem = { key, label, content: content || '', sections: [] as any[] };
-      let itemChars = estimateChars(content) + 120; // +120 for header overhead
 
       // 是否使用者勾選強迫換頁
       const forcePageBreak = data.tips.pageBreaks?.[key];
 
-      // 如果有設定換頁，或者當前頁面放不下這段主內容，且當前頁面不是空的，就換新頁
-      if ((forcePageBreak || currentPageChars + itemChars > MAX_CHARS_PER_PAGE) && currentPageItems.length > 0) {
+      // 如果有設定換頁，且當前頁面不是空的，就換新頁
+      if (forcePageBreak && currentPageItems.length > 0) {
         pagesArray.push(currentPageItems);
         currentPageItems = [];
-        currentPageChars = 0;
       }
 
       currentPageItems.push(currentMainItem);
-      currentPageChars += itemChars;
 
       // 處理額外的子段落 (例如 destinationSections)
       if (sections && sections.length > 0) {
         sections.forEach((sec, sIdx) => {
-          const secChars = estimateChars(sec.title) + estimateChars(sec.content) + 80;
-
-          if (currentPageChars + secChars > MAX_CHARS_PER_PAGE && currentPageItems.length > 0) {
-            // 換頁
+          if (sec.pageBreak && currentMainItem.sections.length > 0) {
+            // 如果這個子標題設定了強迫換頁，且當前已有內容，就先把累積的推出去換頁
             pagesArray.push(currentPageItems);
             currentPageItems = [];
-            currentPageChars = 0;
-
-            // 建立一個接續的主項目
             currentMainItem = { key: `${key}-cont-${sIdx}`, label: `${label} (續)`, content: '', sections: [] };
             currentPageItems.push(currentMainItem);
-            currentPageChars += 120; // header overhead
+          } else if (sec.pageBreak && currentMainItem.content) {
+            // 處理如果這是第一個 section 但上面有預設內容也要換頁的情況
+            pagesArray.push(currentPageItems);
+            currentPageItems = [];
+            currentMainItem = { key: `${key}-cont-${sIdx}`, label: `${label} (續)`, content: '', sections: [] };
+            currentPageItems.push(currentMainItem);
           }
-
           currentMainItem.sections.push(sec);
-          currentPageChars += secChars;
         });
       }
     });

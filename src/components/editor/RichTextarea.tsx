@@ -58,14 +58,18 @@ export function RichTextarea({ value, onChange, themeColor, className, ...props 
 
         const newText = value.substring(0, start) + prefix + value.substring(start, end) + suffix + value.substring(end);
 
-        // 建立合成事件來觸發 onChange
-        const event = {
-            target: {
-                value: newText
-            }
-        } as React.ChangeEvent<HTMLTextAreaElement>;
+        // 使用 native setter 確保 React 觸發更新
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLTextAreaElement.prototype,
+            'value'
+        )?.set;
 
-        onChange(event);
+        if (nativeInputValueSetter && textareaRef.current) {
+            nativeInputValueSetter.call(textareaRef.current, newText);
+            const event = new Event('input', { bubbles: true });
+            textareaRef.current.dispatchEvent(event);
+        }
+
         setSelection(null);
 
         // 恢復 focus
@@ -124,7 +128,7 @@ export function RichTextarea({ value, onChange, themeColor, className, ...props 
                     <div className="w-px h-5 bg-gray-700 mx-1"></div>
                     <button
                         type="button"
-                        onClick={() => applyFormat('bold')}
+                        onMouseDown={(e) => { e.preventDefault(); applyFormat('bold'); }}
                         className="px-2 py-1.5 hover:bg-gray-800 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors"
                         title="套用 **粗體**"
                     >
@@ -133,7 +137,7 @@ export function RichTextarea({ value, onChange, themeColor, className, ...props 
                     </button>
                     <button
                         type="button"
-                        onClick={() => applyFormat('theme')}
+                        onMouseDown={(e) => { e.preventDefault(); applyFormat('theme'); }}
                         className="px-2 py-1.5 hover:bg-gray-800 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors"
                         title="套用 //系統色//"
                     >
@@ -142,7 +146,7 @@ export function RichTextarea({ value, onChange, themeColor, className, ...props 
                     </button>
                     <button
                         type="button"
-                        onClick={() => applyFormat('custom')}
+                        onMouseDown={(e) => { e.preventDefault(); applyFormat('custom'); }}
                         className="px-2 py-1.5 hover:bg-gray-800 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors"
                         title="套用 [[自訂色|碼]]"
                     >

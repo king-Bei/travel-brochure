@@ -52,6 +52,7 @@ export type GridTips = TipItem[];
 export interface DestinationSection {
   title: string;
   content: string;
+  pageBreak?: boolean; // 新增：分層子標題換頁設定
 }
 
 export interface Tips {

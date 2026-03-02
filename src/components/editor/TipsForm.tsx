@@ -61,7 +61,7 @@ export function TipsForm() {
     });
   };
 
-  const updateDestinationSection = (index: number, field: 'title' | 'content', value: string) => {
+  const updateDestinationSection = (index: number, field: 'title' | 'content' | 'pageBreak', value: string | boolean) => {
     const sections = [...(data.tips.destinationSections || [])];
     sections[index] = { ...sections[index], [field]: value };
     updateData({ tips: { ...data.tips, destinationSections: sections } });
@@ -178,20 +178,31 @@ export function TipsForm() {
 
                   {data.tips.destinationSections?.map((section, sIdx) => (
                     <div key={sIdx} className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2 relative group-item">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={section.title}
-                          onChange={(e) => updateDestinationSection(sIdx, 'title', e.target.value)}
-                          className={`${inputClassName} font-bold`}
-                          placeholder="小標題 (例如：電壓與插座)"
-                        />
-                        <button
-                          onClick={() => removeDestinationSection(sIdx)}
-                          className="p-1 text-gray-400 hover:text-red-500"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={section.title}
+                            onChange={(e) => updateDestinationSection(sIdx, 'title', e.target.value)}
+                            className={`${inputClassName} font-bold`}
+                            placeholder="小標題 (例如：電壓與插座)"
+                          />
+                          <button
+                            onClick={() => removeDestinationSection(sIdx)}
+                            className="p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <label className="flex items-center self-start gap-1.5 cursor-pointer text-xs font-semibold text-gray-500 hover:text-gray-800 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                          <input
+                            type="checkbox"
+                            checked={section.pageBreak || false}
+                            onChange={(e) => updateDestinationSection(sIdx, 'pageBreak', e.target.checked)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          這段子標題換新頁
+                        </label>
                       </div>
                       <RichTextarea
                         themeColor={data.theme.primary}
