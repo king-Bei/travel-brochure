@@ -8,9 +8,11 @@ import { storage } from '../lib/storage';
 import { StatusLogModal, LogEntry, LogLevel } from './StatusLogModal';
 
 export function Header({
+    currentId,
     onBackToDashboard,
     saveStatus
 }: {
+    currentId?: string,
     onBackToDashboard?: () => void,
     saveStatus?: 'saved' | 'saving' | 'unsaved'
 }) {
@@ -43,7 +45,8 @@ export function Header({
 
         try {
             const urlParams = new URLSearchParams(window.location.search);
-            const existingId = urlParams.get('id');
+            // 優先使用從 App 傳下來的 currentId，避免讀取網址失敗
+            const existingId = currentId || urlParams.get('id');
             const dataToSave = { ...data };
 
             if (existingId) {

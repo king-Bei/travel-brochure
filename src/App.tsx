@@ -29,6 +29,7 @@ function InnerApp({ currentId, onBackToDashboard }: { currentId: string, onBackT
   return (
     <div className="h-screen flex flex-col">
       <Header
+        currentId={currentId}
         onBackToDashboard={onBackToDashboard}
         saveStatus={saveStatus}
       />

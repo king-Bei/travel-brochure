@@ -91,45 +91,8 @@ export function BasicInfoForm() {
     <div className="space-y-6">
 
       {/* 圖片上傳區域群組 */}
-      <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-
-        {/* Logo Upload */}
-        <div>
-          <label className={labelClassName}>旅行社 Logo</label>
-          <div
-            {...getLogoProps()}
-            onPaste={(e) => handlePaste(e, 'logo')}
-            tabIndex={0}
-            className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors h-32 flex flex-col items-center justify-center outline-none focus:border-blue-300 focus:bg-blue-50/30 ${isLogoDragActive ? 'border-blue-400 bg-blue-50/50' : 'border-gray-300 hover:bg-gray-50'
-              }`}
-          >
-            <input {...getLogoInputProps()} />
-            {data.logo ? (
-              <>
-                <img src={data.logo} alt="Logo" className="max-h-full max-w-full object-contain" />
-                <button
-                  onClick={removeLogoImage}
-                  className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md border border-gray-100 hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </>
-            ) : (
-              <div className="text-gray-400 flex flex-col items-center gap-2">
-                <ImagePlus size={24} strokeWidth={1.5} />
-                <p className="text-xs font-medium">點擊、拖曳或 <kbd className="bg-gray-100 px-1 rounded text-[10px] mx-0.5 border border-gray-200">Ctrl+V</kbd> 貼上</p>
-                <button
-                  onClick={(e) => handleUrlInput('logo', e)}
-                  className="mt-1 text-xs text-blue-500 hover:text-blue-600 font-medium px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
-                >
-                  🔗 貼上圖片網址
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Cover Image Upload */}
+      <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+        {/* Cover Image Upload (原本是 Grid 裡的一半，現在讓它佔滿) */}
         <div>
           <label className={labelClassName}>封面主圖 (Cover)</label>
           <div
@@ -168,16 +131,7 @@ export function BasicInfoForm() {
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label className={labelClassName}>旅行社名稱</label>
-          <input
-            type="text"
-            value={data.agency}
-            onChange={(e) => updateData({ agency: e.target.value })}
-            className={inputClassName}
-            placeholder="例如：安天旅行社"
-          />
-        </div>
+
 
         <div>
           <label className={labelClassName}>旅遊主標題 *</label>
@@ -261,6 +215,62 @@ export function BasicInfoForm() {
               onChange={(e) => updateData({ meetingTime: e.target.value })}
               className={inputClassName}
             />
+          </div>
+        </div>
+      </div>
+
+      {/* 旅行社相關設定移至區域最下方 */}
+      <hr className="my-6 border-gray-200" />
+      <div className="bg-blue-50/30 p-5 rounded-xl border border-blue-100">
+        <h3 className="text-sm font-bold text-blue-900 mb-4 flex items-center gap-2">
+          <span>🏢</span> 旅行社與品牌設定
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className={labelClassName}>旅行社名稱</label>
+            <input
+              type="text"
+              value={data.agency}
+              onChange={(e) => updateData({ agency: e.target.value })}
+              className={inputClassName}
+              placeholder="例如：安天旅行社"
+            />
+          </div>
+
+          {/* Logo Upload */}
+          <div>
+            <label className={labelClassName}>旅行社 Logo 上傳</label>
+            <div
+              {...getLogoProps()}
+              onPaste={(e) => handlePaste(e, 'logo')}
+              tabIndex={0}
+              className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors h-32 flex flex-col items-center justify-center outline-none focus:border-blue-300 focus:bg-white ${isLogoDragActive ? 'border-blue-400 bg-blue-50/50' : 'border-gray-300 hover:bg-white bg-white/50'
+                }`}
+            >
+              <input {...getLogoInputProps()} />
+              {data.logo ? (
+                <>
+                  <img src={data.logo} alt="Logo" className="max-h-full max-w-full object-contain" />
+                  <button
+                    onClick={removeLogoImage}
+                    className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md border border-gray-100 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </>
+              ) : (
+                <div className="text-gray-400 flex flex-col items-center gap-2">
+                  <ImagePlus size={24} strokeWidth={1.5} />
+                  <p className="text-xs font-medium">點擊、拖曳或 <kbd className="bg-gray-100 px-1 rounded text-[10px] mx-0.5 border border-gray-200">Ctrl+V</kbd> 貼上</p>
+                  <button
+                    onClick={(e) => handleUrlInput('logo', e)}
+                    className="mt-1 text-xs text-blue-500 hover:text-blue-600 font-medium px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 transition-colors"
+                  >
+                    🔗 貼上圖片網址
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
