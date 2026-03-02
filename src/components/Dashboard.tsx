@@ -20,20 +20,22 @@ export function Dashboard({ onSelectBrochure }: DashboardProps) {
                 const timeoutPromise = new Promise<never>((_, reject) =>
                     setTimeout(() => reject(new Error('TIMEOUT')), 8000)
                 );
-                // 讀取這張表時，只拿取部分欄位減少流量 (透過 json 萃取)
-                const fetchPromise = supabase.from('brochures').select('id, title:data->>title, agency:data->>agency, updated_at, created_at');
+                // 讀取這張表時，拿取 isDeleted 判斷是否作廢
+                const fetchPromise = supabase.from('brochures').select('id, title:data->>title, agency:data->>agency, isDeleted:data->>isDeleted, updated_at, created_at');
                 const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
 
                 if (!error && data) {
-                    const cloudList: BrochureMeta[] = data.map((row: any) => {
-                        return {
-                            id: row.id,
-                            title: row.title || '未命名手冊',
-                            agency: row.agency || '',
-                            createdAt: row.created_at || new Date().toISOString(),
-                            updatedAt: row.updated_at || new Date().toISOString(),
-                        };
-                    });
+                    const cloudList: BrochureMeta[] = data
+                        .filter((row: any) => row.isDeleted !== 'true' && row.isDeleted !== true)
+                        .map((row: any) => {
+                            return {
+                                id: row.id,
+                                title: row.title || '未命名手冊',
+                                agency: row.agency || '',
+                                createdAt: row.created_at || new Date().toISOString(),
+                                updatedAt: row.updated_at || new Date().toISOString(),
+                            };
+                        });
 
                     mergedList = [...cloudList];
                     hasLoadedCloud = true;
@@ -100,9 +102,18 @@ export function Dashboard({ onSelectBrochure }: DashboardProps) {
         if (window.confirm('確定要刪除這份手冊嗎？這個動作無法復原。')) {
             if (supabase) {
                 try {
-                    await supabase.from('brochures').delete().eq('id', id);
+                    const { error } = await supabase.from('brochures').delete().eq('id', id);
+                    if (error) {
+                        console.warn('實體刪除失敗，嘗試使用軟刪除 (標記作廢隱藏)...', error);
+                        // 取得當前資料並加上 isDeleted 標記，因為 update 沒有被限制
+                        const { data: existingData } = await supabase.from('brochures').select('data').eq('id', id).single();
+                        if (existingData && existingData.data) {
+                            const newData = { ...(existingData.data as any), isDeleted: true };
+                            await supabase.from('brochures').update({ data: newData }).eq('id', id);
+                        }
+                    }
                 } catch (error) {
-                    console.error('刪除雲端資料發生錯誤', error);
+                    console.error('刪除或作廢雲端資料發生錯誤', error);
                 }
             }
             await storage.deleteBrochure(id);
