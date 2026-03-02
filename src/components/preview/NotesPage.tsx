@@ -4,11 +4,10 @@ import { Edit3 } from 'lucide-react';
 import { useBrochure } from '../../context/BrochureContext';
 
 interface NotesPageProps {
-    pageNumber?: number;
     totalNotes?: number;
 }
 
-export function NotesPage({ pageNumber, totalNotes }: NotesPageProps) {
+export function NotesPage({ totalNotes }: NotesPageProps) {
     const { data } = useBrochure();
 
     // 建立 18 條橫線作為筆記區
@@ -16,7 +15,7 @@ export function NotesPage({ pageNumber, totalNotes }: NotesPageProps) {
 
     return (
         <PageWrapper
-            title={totalNotes && totalNotes > 1 ? `旅遊隨筆 (${pageNumber}/${totalNotes})` : "旅遊隨筆"}
+            title="旅遊隨筆"
             icon={<Edit3 size={24} />}
         >
             <div className="flex flex-col h-full mt-4">

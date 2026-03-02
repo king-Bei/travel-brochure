@@ -20,7 +20,7 @@ export function TipsPage() {
       {pages.map((pageItems, pageIdx) => (
         <PageWrapper
           key={`tips-page-${pageIdx}`}
-          title={pages.length > 1 ? `旅遊注意事項 (${pageIdx + 1}/${pages.length})` : "旅遊注意事項"}
+          title="旅遊注意事項"
           icon={<AlertCircle size={24} />}
         >
           <div className="flex flex-col flex-1 bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06)] border border-gray-100 p-8 mt-4">
