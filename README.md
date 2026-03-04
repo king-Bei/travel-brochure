@@ -1,73 +1,66 @@
-# React + TypeScript + Vite
+# 📅 專業旅遊行程手冊生成系統 (Travel Brochure Builder)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+這是一個功能強大且直覺的 **A5 規格旅遊手冊全自動生成系統**。專為導遊、領隊與旅行社規劃師設計，手冊內容涵蓋從出發到返程所需的所有專業資訊，並完全符合 A5 尺寸雙面列印標準。
 
-Currently, two official plugins are available:
+## 🌟 核心功能一覽
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. 專業封面與目錄 (Cover & TOC)
+- **多行標題支援**：封面主標題可自由換行，解決標題過長排版問題。
+- **全動態目錄**：自動根據版塊順序生成目錄與頁碼，支援個別章節顯示開關。
+- **品牌客製化**：可上傳封面主圖、公司 Logo 以及自訂目錄背景圖與感言文字。
 
-## React Compiler
+### 2. 航班與住宿管理 (Flights & Hotels)
+- **多段航班資訊**：清晰呈現去程、中轉及回程航班細節，包含航空公司圖標、出發/抵達時間。
+- **飯店一覽表**：快速對照每日下榻飯店與聯繫電話。
+- **深度飯店介紹**：專屬飯店詳解頁面，包含房型說明、設施一覽及精選圖片。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 3. 多功能分房表 (Smart Rooming List)
+- **動態多飯店欄位**：同一張表內可同時管理多間飯店的房號分派。
+- **智慧單元格合併**：自動執行 `rowSpan` 邏輯，同房號旅客資訊自動合併顯示，排版極致工整。
+- **便捷名單匯入**：支援從 Excel 或剪貼簿直接貼入名單並自動生成房間分配。
 
-## Expanding the ESLint configuration
+### 4. 景點與每日行程 (Attractions & Itinerary)
+- **多元景點排版**：提供「上 1 下 2」、「左 1 右 2」、「四格棋盤」及「單張大圖」等排版模式。
+- **詳盡行程大綱**：逐日顯示行程摘要、景點照片及餐食標示（早餐、午餐、晚餐、自理）。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 5. 旅遊地圖與筆記 (Map & Notes)
+- **整頁地圖支援**：可上傳旅遊地區全圖，並設定滿版 (Cover) 或保比例 (Contain) 顯示。
+- **空白筆記分頁**：自由設定手冊末尾的筆記頁數，方便旅客紀錄心情。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 6. 便利資訊與物品 (Tips & Packing)
+- **兩大叮嚀模式**：
+  - **傳統段落版**：適合詳細說明安檢、出入境流程。
+  - **美型九宮格版**：以直覺圖示（衣著、電壓、時差等）呈現重要資訊。
+- **行李備忘清單**：自定義三欄式清單，支援標示「重要的 (Important)」必備品。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 7. 自由創作者頁面 (Custom Pages)
+- **無限自訂頁面**：若預設版塊不足，可自行新增「自訂圖文頁面」，並套用景點般的精美版型。
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🛠️ 強大編輯工具
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- **快速導覽選單**：編輯器上方設有「快速選單」書籤，移動到圖示上方會出現懸浮輔助文字說明。
+- **即時預覽 (Live View)**：編輯時右側即時同步呈現 A5 頁面，所見即所得。
+- **富文本標記語法**：
+  - `**文字**`：一般粗體。
+  - `//文字//`：飯店/系統色粗體（依主題色變更）。
+  - `[[文字|#色碼]]`：完全自訂色彩文字。
+- **智慧圖片處理**：前端自動壓縮圖片，確保手冊檔案輕量化，瀏覽不卡頓。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## � 技術細節
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **開發架構**：React 19 + TypeScript 5
+- **打印排版**：運用 Vanilla CSS 精準控制 A5 (148mm x 210mm) 分頁邏輯與導航控制。
+- **圖示庫**：Lucide React
+- **建置工具**：Vite
+
+## 🖨️ 列印導引
+
+為了獲得最佳的手冊質感，列印時請注意以下設定：
+1. **紙張大小**：選擇 **A5**。
+2. **邊距**：選擇 **無** (None)。
+3. **比例**：**100%**。
+4. **選項**：務必勾選 **背景圖形** (Background graphics)。
+5. **雙面列印**：建議開啟「翻轉短邊」進行雙面列印，即可裝訂成冊。
+
+---
+*此系統由 Antigravity 團隊成員協助開發，專為旅遊業打造最專業的工具。*

@@ -23,37 +23,37 @@ export function TipsGridPage() {
 
     return (
         <PageWrapper title="貼心小叮嚀" icon={<Lightbulb size={24} />}>
-            <div className="flex-grow flex flex-col justify-center w-full px-2 py-4">
-                <div className="grid grid-cols-3 gap-5 h-full auto-rows-fr">
+            <div className="flex-grow flex flex-col justify-center w-full px-2 py-2">
+                <div className="grid grid-cols-3 gap-3 h-full auto-rows-fr">
                     {sortedTips.map((tip) => (
                         <div
                             key={tip.id}
                             className="bg-white rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden flex flex-col relative"
                         >
                             <div
-                                className="absolute top-0 left-0 w-24 h-10 rounded-br-3xl flex items-center pl-4 z-10"
+                                className="absolute top-0 left-0 w-20 h-7 rounded-br-3xl flex items-center pl-3 z-10"
                                 style={{ backgroundColor: data.theme.primary, color: 'white' }}
                             >
-                                <h3 className="font-bold text-sm tracking-widest">{tip.title}</h3>
+                                <h3 className="font-bold text-xs tracking-widest">{tip.title}</h3>
                             </div>
 
-                            <div className="flex-1 p-4 pt-12 flex flex-col">
-                                <div className="h-24 w-full flex items-center justify-center mb-3">
+                            <div className="flex-1 p-3 pt-9 flex flex-col items-center">
+                                <div className="h-14 w-14 flex items-center justify-center mb-2">
                                     {tip.image ? (
                                         <img
                                             src={tip.image}
                                             alt={tip.title}
-                                            className="max-h-full max-w-full object-contain filter drop-shadow hover:scale-105 transition-transform"
+                                            className="w-full h-full object-contain filter drop-shadow hover:scale-105 transition-transform"
                                         />
                                     ) : (
-                                        <div className="text-5xl opacity-80 filter drop-shadow-sm">
+                                        <div className="text-4xl opacity-80 filter drop-shadow-sm">
                                             {defaultIcons[tip.id] || '💡'}
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex-1 flex flex-col justify-end">
-                                    <p className="text-[11px] leading-relaxed text-gray-700 whitespace-pre-wrap flex-grow-0">
+                                <div className="w-full flex-1 flex flex-col justify-center">
+                                    <p className="text-[9px] leading-relaxed text-gray-700 text-left whitespace-pre-wrap">
                                         {parseRichText(tip.content, data.theme.primary)}
                                     </p>
                                 </div>

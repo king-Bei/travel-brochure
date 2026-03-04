@@ -17,7 +17,7 @@ export function AttractionPage() {
         if (imgCount === 0) return null;
 
         // 在一頁兩個景點的模式下，改用 flex-1 min-h-0 讓它自適應填滿剩餘空間，而不是固定鎖死 160px
-        const heightClass = isCompact ? "flex-1 min-h-0" : "max-h-[320px] flex-grow";
+        const heightClass = isCompact ? "flex-1 min-h-0" : "max-h-[200px] flex-grow";
 
         if (layout === 'top-1-bottom-2' || (imgCount === 3 && layout !== 'left-1-right-2')) {
             return (
@@ -35,7 +35,7 @@ export function AttractionPage() {
 
         if (layout === 'left-1-right-2' || imgCount === 3) {
             return (
-                <div className={`flex gap-2 min-h-[120px] ${heightClass} mt-3`}>
+                <div className={`flex gap-2 min-h-[80px] ${heightClass} mt-3`}>
                     <div className="w-2/3 rounded-xl overflow-hidden relative">
                         <img src={images[0]} className="w-full h-full object-cover" alt="" />
                     </div>
@@ -49,7 +49,7 @@ export function AttractionPage() {
 
         if (layout === 'grid-4' || imgCount >= 4) {
             return (
-                <div className={`grid grid-cols-2 gap-2 min-h-[120px] ${heightClass} mt-3`}>
+                <div className={`grid grid-cols-2 gap-2 min-h-[80px] ${heightClass} mt-3`}>
                     {images.slice(0, 4).map((img, idx) => (
                         <div key={idx} className="rounded-xl overflow-hidden relative">
                             <img src={img} className="w-full h-full object-cover" alt="" />
@@ -60,7 +60,7 @@ export function AttractionPage() {
         }
 
         return (
-            <div className={`min-h-[120px] ${heightClass} mt-3 rounded-xl overflow-hidden relative`}>
+            <div className={`min-h-[80px] ${heightClass} mt-3 rounded-xl overflow-hidden relative`}>
                 <img src={images[0]} className="w-full h-full object-cover" alt="" />
             </div>
         );
@@ -82,19 +82,19 @@ export function AttractionPage() {
                     <div className="flex flex-col h-full py-2 gap-6">
                         {pageAttractions.map((attraction, aIdx) => (
                             <div key={aIdx} className={`flex flex-col flex-1 ${pageAttractions.length > 1 ? 'min-h-0' : 'h-full'}`}>
-                                <div className="flex items-center mb-4">
+                                <div className="flex items-center mb-3">
                                     <div
-                                        className="w-1.5 h-6 mr-3 rounded-full"
+                                        className="w-1 h-5 mr-2 rounded-full"
                                         style={{ backgroundColor: data.theme.primary }}
                                     />
-                                    <h2 className={`${pageAttractions.length > 1 ? 'text-xl' : 'text-2xl'} font-bold text-gray-800 tracking-wide flex-1 flex items-center gap-2`}>
+                                    <h2 className={`${pageAttractions.length > 1 ? 'text-base' : 'text-lg'} font-bold text-gray-800 tracking-wide flex-1 flex items-center gap-2`}>
                                         {attraction.title}
-                                        {attraction.country && <span className="text-[10px] font-bold text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded uppercase">{attraction.country}</span>}
+                                        {attraction.country && <span className="text-[9px] font-bold text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded uppercase">{attraction.country}</span>}
                                     </h2>
                                 </div>
 
-                                <div className="bg-gray-50/50 p-4 rounded-2xl flex-1 flex flex-col min-h-0">
-                                    <div className={`prose prose-sm max-w-none text-gray-600 leading-relaxed font-medium ${pageAttractions.length > 1 ? 'line-clamp-3 mb-2' : 'mb-4 flex-grow'}`}>
+                                <div className="bg-gray-50/50 p-3 rounded-xl flex-1 flex flex-col min-h-0">
+                                    <div className={`prose prose-sm max-w-none text-xs text-gray-600 leading-relaxed font-medium ${pageAttractions.length > 1 ? 'line-clamp-3 mb-2' : 'mb-3 flex-grow'}`}>
                                         {attraction.description}
                                     </div>
                                     {renderLayout(attraction, pageAttractions.length > 1)}

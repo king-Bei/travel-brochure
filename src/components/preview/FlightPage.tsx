@@ -37,16 +37,16 @@ export function FlightPage() {
   const FlightCard = ({ flight, index }: { flight: FlightInfo; index: number }) => {
     return (
       <div className="relative bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-2 last:mb-0">
-        <div className="flex items-stretch min-h-[80px]">
-          <div className="flex-grow p-3 flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                {flight.airlineLogo && <img src={flight.airlineLogo} alt="" className="h-4 object-contain" />}
-                <span className="text-[15px] font-bold text-gray-800">{flight.airline}</span>
-                <span className="text-[15px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-bold">{flight.flightNumber}</span>
+        <div className="flex items-stretch min-h-[60px]">
+          <div className="flex-grow p-2 flex flex-col justify-center">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                {flight.airlineLogo && <img src={flight.airlineLogo} alt="" className="h-3 object-contain" />}
+                <span className="text-xs font-bold text-gray-800">{flight.airline}</span>
+                <span className="text-xs bg-gray-100 px-1 py-0.5 rounded text-gray-500 font-bold">{flight.flightNumber}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[15px] font-bold text-gray-600">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-600">
                   {flight.date ? (
                     flight.arrivalNextDay ? (
                       <>
@@ -64,10 +64,10 @@ export function FlightPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col items-start w-[110px]">
-                <span className="text-xl font-black text-gray-900 leading-none">{flight.departureTime || '--:--'}</span>
-                <span className="text-[15px] font-bold text-gray-600 truncate w-full">{flight.departurePlace || '待確認'}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col items-start w-[80px]">
+                <span className="text-base font-black text-gray-900 leading-none">{flight.departureTime || '--:--'}</span>
+                <span className="text-xs font-bold text-gray-600 truncate w-full">{flight.departurePlace || '待確認'}</span>
               </div>
 
               <div className="flex-grow flex flex-col items-center justify-center relative">
@@ -83,16 +83,16 @@ export function FlightPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-end w-[130px]">
+              <div className="flex flex-col items-end w-[90px]">
                 <div className="flex items-start gap-0.5">
-                  <span className="text-xl font-black text-gray-900 leading-none">{flight.arrivalTime || '--:--'}</span>
-                  {flight.arrivalNextDay && <span className="text-xs font-black text-orange-500 mt-[-2px]">+1</span>}
+                  <span className="text-base font-black text-gray-900 leading-none">{flight.arrivalTime || '--:--'}</span>
+                  {flight.arrivalNextDay && <span className="text-[10px] font-black text-orange-500 mt-[-2px]">+1</span>}
                 </div>
-                <span className="text-[15px] font-bold text-gray-600 truncate w-full text-right">{flight.arrivalPlace || '待確認'}</span>
+                <span className="text-xs font-bold text-gray-600 truncate w-full text-right">{flight.arrivalPlace || '待確認'}</span>
               </div>
             </div>
             {flight.duration && (
-              <div className="mt-1 text-[15px] text-gray-400 font-medium italic">
+              <div className="mt-1 text-xs text-gray-400 font-medium italic">
                 Note: {flight.duration}
               </div>
             )}
@@ -102,48 +102,47 @@ export function FlightPage() {
     );
   };
 
-  // 集合與緊急聯絡區塊
   const meetingSection = (data.meetingPoint || data.meetingTime || data.tourLeader || data.agencyName || data.meetingMap) ? (
-    <div className="mt-4 pt-4 border-t-2 border-dashed border-gray-100">
-      <div className="flex items-center gap-2 mb-4">
-        <Users size={20} style={{ color: data.theme.primary }} />
-        <h3 className="font-bold text-xl tracking-tight" style={{ color: data.theme.primary }}>集合資訊 & 聯絡方式</h3>
+    <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
+      <div className="flex items-center gap-2 mb-1.5">
+        <Users size={14} style={{ color: data.theme.primary }} />
+        <h3 className="font-bold text-base tracking-tight" style={{ color: data.theme.primary }}>集合資訊 & 聯絡方式</h3>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {/* 集合資訊卡片 */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 flex flex-col justify-center">
-            <p className="text-[15px] font-black text-gray-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
-              <MapPin size={14} /> 集合地點
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
+              <MapPin size={10} /> 集合地點
             </p>
-            <p className="text-[17px] font-bold text-gray-800 leading-tight">{data.meetingPoint || '請洽旅行社確認'}</p>
+            <p className="text-[11px] font-bold text-gray-800 leading-tight">{data.meetingPoint || '請洽旅行社確認'}</p>
           </div>
-          <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 flex flex-col justify-center">
-            <p className="text-[15px] font-black text-gray-400 uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
-              <Clock size={14} /> 集合時間
+          <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
+              <Clock size={10} /> 集合時間
             </p>
-            <p className="text-2xl font-black" style={{ color: data.theme.primary }}>{data.meetingTime || '--:--'}</p>
+            <p className="text-lg font-black leading-none" style={{ color: data.theme.primary }}>{data.meetingTime || '--:--'}</p>
           </div>
         </div>
 
         {/* 旅行社與緊急聯絡資訊 */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5" style={{ color: data.theme.primary }}>
-            <Phone size={96} />
+        <div className="bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-12 h-12 -mr-3 -mt-3 opacity-5" style={{ color: data.theme.primary }}>
+            <Phone size={48} />
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 relative z-10">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 relative z-10">
             {/* 第一列：領隊 (單獨一列) */}
-            <div className="col-span-2 pb-2 border-b border-gray-50 mb-1 grid grid-cols-2 gap-x-8">
-              <div className="space-y-1">
-                <p className="text-[15px] font-black text-gray-400 uppercase tracking-widest">領隊</p>
-                <p className="text-2xl font-black text-gray-900 leading-none">{data.tourLeader || '敬請期待'}</p>
+            <div className="col-span-2 pb-1 border-b border-gray-50 mb-0.5 grid grid-cols-2 gap-x-4">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">領隊</p>
+                <p className="text-base font-black text-gray-900 leading-none">{data.tourLeader || '敬請期待'}</p>
               </div>
               {data.tourLeaderPhone && (
-                <div className="space-y-1">
-                  <p className="text-[15px] font-bold text-gray-400 uppercase">領隊手機號碼</p>
-                  <p className="text-xl font-black tracking-wider" style={{ color: data.theme.primary }}>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">領隊手機號碼</p>
+                  <p className="text-sm font-black tracking-wider leading-none" style={{ color: data.theme.primary }}>
                     {data.tourLeaderPhone}
                   </p>
                 </div>
@@ -151,31 +150,31 @@ export function FlightPage() {
             </div>
 
             {/* 第二列：旅行社 與 緊急聯繫人 */}
-            <div className="space-y-1">
-              <p className="text-[13px] font-bold text-gray-400 uppercase tracking-widest">鑫囍探索旅行社緊急聯繫人</p>
-              <p className="text-[17px] font-black text-gray-900 leading-none">
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">緊急聯繫人</p>
+              <p className="text-xs font-black text-gray-900 leading-none">
                 {data.emergencyContactName || '值班人員'}
               </p>
             </div>
 
-            <div className="flex flex-col items-start justify-end space-y-1.5">
-              <span className="text-[15px] font-bold text-gray-500 leading-none tracking-tight">
+            <div className="flex flex-col items-start justify-end space-y-0.5">
+              <span className="text-[11px] font-bold text-gray-500 leading-none tracking-tight">
                 {data.agencyPhone || '02-8789-6699'}
               </span>
-              <p className="text-[19px] font-black tracking-wider text-gray-900 leading-none">
+              <p className="text-sm font-black tracking-wider text-gray-900 leading-none">
                 {data.agencyMobile || data.emergencyPhone || '0911-111-111'}
               </p>
             </div>
           </div>
         </div>
 
-        {/* 地圖區域 (改為放置於下方) */}
+        {/* 地圖區域 */}
         {data.meetingMap && (
-          <div className="bg-gray-100/50 p-2 rounded-2xl border border-gray-200">
-            <div className="bg-white rounded-xl overflow-hidden shadow-inner">
-              <img src={data.meetingMap} alt="Airport Meeting Map" className="w-full h-auto max-h-[200px] object-contain" />
+          <div className="bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
+            <div className="bg-white rounded-lg overflow-hidden shadow-inner">
+              <img src={data.meetingMap} alt="Airport Meeting Map" className="w-full h-auto max-h-[140px] object-contain" />
             </div>
-            <p className="text-center text-[10px] font-bold text-gray-400 mt-2 tracking-widest uppercase">機場集合地圖</p>
+            <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">機場集合地圖</p>
           </div>
         )}
       </div>
@@ -213,14 +212,14 @@ export function FlightPage() {
   }
 
   return (
-    <PageWrapper title="航班資訊" icon={<Plane size={24} />}>
+    <PageWrapper title="航班資訊" icon={<Plane size={18} />}>
       <div className="flex-grow flex flex-col h-full">
-        <div className="space-y-6">
+        <div className="space-y-4">
           {groupedFlights.map((group, gIdx) => (
             <div key={gIdx} className="space-y-2">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <div className="w-1.5 h-4 rounded-full" style={{ backgroundColor: group.color }} />
-                <h4 className="text-[13px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
+              <div className="flex items-center gap-2 mb-1 px-1">
+                <div className="w-1 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                <h4 className="text-[11px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
               </div>
               <div className="space-y-2">
                 {group.segments.map((flight, fIdx) => (

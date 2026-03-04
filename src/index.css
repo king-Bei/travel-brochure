@@ -46,8 +46,8 @@ body {
     background: white !important;
   }
 
-  /* 恢復 .a4-page 的 relative 定位，確保內部頁首/頁尾 absolute 定位正常 */
-  .a4-page {
+  /* 恢復 .a5-page 的 relative 定位，確保內部頁首/頁尾 absolute 定位正常 */
+  .a5-page {
     position: relative !important;
   }
 }
@@ -70,9 +70,9 @@ body {
   background: #94a3b8;
 }
 
-.a4-page {
-  width: 210mm;
-  height: 297mm;
+.a5-page {
+  width: 148mm;
+  height: 210mm;
   margin: 0 auto;
   background: white;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
@@ -85,8 +85,8 @@ body {
   /* 防止內容溢出導致邊界問題 */
 }
 
-/* 只要是 .a4-page 且非封面 就增加頁碼計數 */
-.a4-page:not(.cover-page) {
+/* 只要是 .a5-page 且非封面 就增加頁碼計數 */
+.a5-page:not(.cover-page) {
   counter-increment: pageNum;
 }
 
@@ -99,16 +99,16 @@ body {
 /* 因為封面是第一個元素，導致後續頁面的 DOM 索引 +1
    DOM 偶數(even) = 實際第1(目錄), 3, 5頁 (奇數頁) -> 頁首置右 (row-reverse)
    DOM 奇數(odd) = 實際第2, 4, 6頁 (偶數頁) -> 頁首置左 (row) */
-.a4-page:nth-of-type(even) .page-header {
+.a5-page:nth-of-type(even) .page-header {
   flex-direction: row-reverse;
 }
 
-.a4-page:nth-of-type(odd):not(.cover-page) .page-header {
+.a5-page:nth-of-type(odd):not(.cover-page) .page-header {
   flex-direction: row;
 }
 
 /* 最後一頁不需要再換頁 */
-.a4-page:last-child {
+.a5-page:last-child {
   page-break-after: auto;
   break-after: auto;
 }
@@ -134,13 +134,13 @@ body {
     width: 100% !important;
   }
 
-  /* 強制每頁都是 A4 大小、完整滿版 */
-  .a4-page {
+  /* 強制每頁都是 A5 大小、完整滿版 */
+  .a5-page {
     display: flex !important;
     flex-direction: column !important;
-    width: 210mm !important;
-    min-height: 297mm !important;
-    height: 297mm !important;
+    width: 148mm !important;
+    min-height: 210mm !important;
+    height: 210mm !important;
     page-break-after: always !important;
     break-after: page !important;
     margin: 0 !important;
@@ -152,14 +152,14 @@ body {
     print-color-adjust: exact !important;
   }
 
-  .a4-page:last-child {
+  .a5-page:last-child {
     page-break-after: auto !important;
     break-after: auto !important;
   }
 }
 
 @page {
-  size: A4 portrait;
-  size: 210mm 297mm;
+  size: A5 portrait;
+  size: 148mm 210mm;
   margin: 0mm;
 }

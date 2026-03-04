@@ -56,13 +56,13 @@ export function CoverPage() {
           <div className="flex-grow flex flex-col items-center justify-center text-center -mt-12">
             <div className="w-16 h-1 mb-8 rounded-full" style={{ backgroundColor: data.theme.primary }} />
             <h1
-              className="text-5xl font-black mb-4 leading-tight tracking-wide"
+              className="text-3xl font-black mb-2 leading-tight tracking-wide whitespace-pre-wrap"
               style={{ color: data.theme.primary }}
             >
               {data.title || '旅遊說明會手冊'}
             </h1>
             {data.subTitle && (
-              <h2 className="text-2xl font-bold mb-4 tracking-widest opacity-80" style={{ color: data.theme.primary }}>
+              <h2 className="text-lg font-bold mb-4 tracking-widest opacity-80" style={{ color: data.theme.primary }}>
                 {data.subTitle}
               </h2>
             )}
@@ -75,15 +75,15 @@ export function CoverPage() {
             <div className="w-full border-t border-dashed mb-6" style={{ borderColor: `${data.theme.primary}80` }} />
 
             {/* 日期與地點列 */}
-            <div className="w-full flex justify-between items-center px-8 mb-6 text-xl tracking-wider font-semibold" style={{ color: data.theme.primary }}>
-              <div className="flex items-center gap-4">
-                <Calendar size={24} />
+            <div className="w-full flex justify-between items-center px-4 mb-4 text-base tracking-wider font-semibold" style={{ color: data.theme.primary }}>
+              <div className="flex items-center gap-2">
+                <Calendar size={18} />
                 <span>{formatDate(data.startDate)}</span>
                 <span className="text-gray-400 font-normal mx-2">~</span>
                 <span>{formatEndDate(data.startDate, data.duration)}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <MapPin size={24} />
+              <div className="flex items-center gap-2">
+                <MapPin size={18} />
                 <span>{data.destination || '未指派地點'}</span>
               </div>
             </div>
@@ -92,14 +92,14 @@ export function CoverPage() {
             <div className="w-full border-b border-dashed mb-10" style={{ borderColor: `${data.theme.primary}80` }} />
 
             {/* Logo 與 旅行社名稱 (置中排列) */}
-            <div className="flex flex-col items-center justify-center gap-6">
+            <div className="flex flex-col items-center justify-center gap-4">
               {data.logo && (
-                <div className="max-w-[200px]">
-                  <img src={data.logo} alt="Logo" className="w-full h-auto object-contain max-h-24" />
+                <div className="max-w-[160px]">
+                  <img src={data.logo} alt="Logo" className="w-full h-auto object-contain max-h-16" />
                 </div>
               )}
               {data.agency && (
-                <p className="tracking-[0.2em] font-black text-xl uppercase opacity-90" style={{ color: data.theme.primary }}>
+                <p className="tracking-[0.2em] font-black text-lg uppercase opacity-90" style={{ color: data.theme.primary }}>
                   {data.agency}
                 </p>
               )}

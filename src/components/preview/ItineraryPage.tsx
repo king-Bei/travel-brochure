@@ -23,47 +23,55 @@ export function ItineraryPage() {
   return (
     <>
       {pages.map((pageDays, pageIdx) => (
-        <PageWrapper key={pageIdx} title={pageIdx === 0 ? "行程規劃" : "行程規劃 (續)"} icon={<MapPin size={24} />}>
-          <div className="space-y-6">
+        <PageWrapper key={pageIdx} title={pageIdx === 0 ? "行程規劃" : "行程規劃 (續)"} icon={<MapPin size={18} />}>
+          <div className="space-y-3">
             {pageDays.map((day: any) => {
               const index = day.originalIndex;
               return (
                 <div
                   key={index}
-                  className="flex gap-6 p-5 bg-white rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group"
+                  className="flex gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100 relative overflow-hidden group"
                 >
-                  {/* 左側天數裝飾 */}
+                  {/* 左側天數裝飾 - 調整為高度略縮，避免被圓角切割感 */}
                   <div
-                    className="absolute left-0 top-0 bottom-0 w-1.5 transition-all group-hover:w-2"
+                    className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full transition-all group-hover:w-1.5"
                     style={{ backgroundColor: data.theme.primary }}
                   />
 
                   {/* 天數徽 badges */}
                   <div className="flex-shrink-0 flex flex-col items-center">
                     <div
-                      className="w-16 h-16 flex flex-col justify-center items-center rounded-xl bg-gray-50 mb-2 border border-gray-100"
+                      className="w-12 h-12 flex flex-col justify-center items-center rounded-lg bg-gray-50 mb-1.5 border border-gray-100 pb-0.5"
                       style={{ color: data.theme.primary }}
                     >
-                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Day</span>
-                      <span className="text-2xl font-black leading-none">{index + 1}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest opacity-60 leading-none">Day</span>
+                      <span className="text-xl font-black leading-none">{index + 1}</span>
                       {data.startDate && (
-                        <span className="text-[12px] font-bold mt-1 opacity-90 border-t border-gray-200 pt-1 w-full text-center">
+                        <div className="flex flex-col items-center mt-1 border-t border-gray-200 pt-1.5 w-full leading-tight font-black">
                           {(() => {
                             const date = new Date(data.startDate);
                             date.setDate(date.getDate() + index);
-                            return `${date.getMonth() + 1}/${date.getDate()} (${['日', '一', '二', '三', '四', '五', '六'][date.getDay()]})`;
+                            const month = date.getMonth() + 1;
+                            const day = date.getDate();
+                            const weekDay = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()];
+                            return (
+                              <>
+                                <span className="text-[16px] leading-none mb-0.5">{month}/{day}</span>
+                                <span className="text-[14px] opacity-80 leading-none">({weekDay})</span>
+                              </>
+                            );
                           })()}
-                        </span>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* 內容區塊 */}
-                  <div className="flex-grow space-y-4">
+                  <div className="flex-grow space-y-2.5">
 
                     {/* 標題 */}
                     <h3
-                      className="text-xl font-bold pt-1"
+                      className="text-[14px] font-bold pt-1"
                       style={{ color: data.theme.primary }}
                     >
                       {day.title}
@@ -71,12 +79,12 @@ export function ItineraryPage() {
 
                     {/* 圖片網格 */}
                     {day.images.length > 0 && (
-                      <div className={`grid gap-2 mb-3 rounded-xl overflow-hidden ${day.images.length === 1 ? 'grid-cols-1' :
+                      <div className={`grid gap-1.5 mb-2 rounded-xl overflow-hidden ${day.images.length === 1 ? 'grid-cols-1' :
                         day.images.length === 2 ? 'grid-cols-2' :
                           'grid-cols-3'
                         }`}>
                         {day.images.map((img: string, imgIndex: number) => (
-                          <div key={imgIndex} className="relative pt-[60%]">
+                          <div key={imgIndex} className="relative pt-[50%]">
                             <img
                               src={img}
                               alt={`Day ${index + 1}`}
@@ -89,33 +97,33 @@ export function ItineraryPage() {
 
                     {/* 行程描述 */}
                     {day.description && (
-                      <p className="text-[15px] leading-relaxed text-gray-700 whitespace-pre-wrap">
+                      <p className="text-[11px] leading-snug text-gray-700 whitespace-pre-wrap">
                         {day.description}
                       </p>
                     )}
 
                     {/* 景點介紹 */}
                     {day.attractions && (
-                      <div className="mt-4 p-4 bg-gray-50/70 rounded-xl border border-gray-100">
-                        <h4 className="text-sm font-bold mb-2 flex items-center gap-1.5" style={{ color: data.theme.primary }}>
-                          <MapPin size={16} /> 景點特色
+                      <div className="mt-2 p-2.5 bg-gray-50/70 rounded-xl border border-gray-100">
+                        <h4 className="text-[11px] font-bold mb-1 flex items-center gap-1.5" style={{ color: data.theme.primary }}>
+                          <MapPin size={12} /> 景點特色
                         </h4>
-                        <p className="text-[14.5px] leading-relaxed text-gray-700 whitespace-pre-wrap">
+                        <p className="text-[11px] leading-snug text-gray-700 whitespace-pre-wrap">
                           {day.attractions}
                         </p>
                       </div>
                     )}
 
                     {/* 餐食與住宿資訊 Footer */}
-                    <div className="flex flex-wrap gap-3 pt-3 mt-2 border-t border-gray-100">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-sm font-medium text-gray-600">
-                        <Utensils size={14} className="opacity-60" />
+                    <div className="flex flex-wrap gap-1.5 pt-1.5 mt-1.5 border-t border-gray-100">
+                      <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 rounded text-[10px] font-medium text-gray-600 border border-gray-100 shadow-sm">
+                        <Utensils size={10} className="opacity-60" />
                         {getMealSymbols(day.meals)}
                       </div>
 
                       {day.hotelIndex !== null && data.hotels[day.hotelIndex] && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-sm font-medium text-gray-600">
-                          <BedDouble size={14} className="opacity-60" />
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-50 rounded text-[10px] font-medium text-gray-600 border border-gray-100 shadow-sm">
+                          <BedDouble size={10} className="opacity-60" />
                           {data.hotels[day.hotelIndex].name || '已安排住宿'}
                         </div>
                       )}

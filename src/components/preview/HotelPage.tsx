@@ -10,6 +10,20 @@ export function HotelPage() {
     return null;
   }
 
+  const getHotelDaysLabel = (hotelIndex: number) => {
+    const days: number[] = [];
+    data.itineraries?.forEach((day: any, idx: number) => {
+      if (day.hotelIndex === hotelIndex) {
+        days.push(idx + 1);
+      }
+    });
+
+    if (days.length === 0) return `第 ${hotelIndex + 1} 間飯店`;
+    if (days.length === 1) return `第 ${days[0]} 天飯店`;
+
+    return `第 ${days[0]}-${days[days.length - 1]} 天飯店`;
+  };
+
   // 將飯店依據換頁標記分組
   const hotelPages: typeof data.hotels[] = [];
   let currentPage: typeof data.hotels = [];
@@ -42,19 +56,19 @@ export function HotelPage() {
                 >
                   {/* 標題與天數標記 */}
                   <div
-                    className="px-5 py-3 flex items-center justify-between border-b border-gray-50 bg-gray-50/50"
+                    className="px-3 py-2 flex items-center justify-between border-b border-gray-50 bg-gray-50/50"
                   >
                     <h3
-                      className="text-lg font-bold flex items-center gap-2"
+                      className="text-sm font-bold flex items-center gap-2"
                       style={{ color: data.theme.primary }}
                     >
                       <div
-                        className="w-1.5 h-4 rounded-full"
+                        className="w-1 h-3 rounded-full"
                         style={{ backgroundColor: data.theme.primary }}
                       />
-                      第 {index + 1} 間飯店
+                      {getHotelDaysLabel(index)}
                     </h3>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2 py-1 bg-white rounded shadow-sm border border-gray-100">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 py-0.5 bg-white rounded shadow-sm border border-gray-100">
                       Hotel {index + 1}
                     </span>
                   </div>
@@ -78,35 +92,35 @@ export function HotelPage() {
                         </div>
                       )}
                       {/* 確保即使圖片為 absolute 也有最小高度 */}
-                      <div className="pb-[75%] md:pb-0 md:h-full min-h-[160px]"></div>
+                      <div className="pb-[60%] md:pb-0 md:h-full min-h-[120px]"></div>
                     </div>
 
                     {/* 飯店資訊 */}
-                    <div className="p-5 md:w-2/3 flex flex-col justify-center space-y-4">
-                      <h4 className="text-xl font-bold text-gray-900 leading-tight">
+                    <div className="p-4 md:w-2/3 flex flex-col justify-center space-y-2">
+                      <h4 className="text-lg font-bold text-gray-900 leading-tight">
                         {hotel.name || '未指定飯店名稱'}
                       </h4>
 
-                      <div className="space-y-2.5">
-                        <div className="flex items-start gap-3 text-sm text-gray-600">
-                          <MapPin size={16} className="mt-0.5 flex-shrink-0 text-gray-400" />
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2 text-xs text-gray-600">
+                          <MapPin size={14} className="mt-0.5 flex-shrink-0 text-gray-400" />
                           <span className="leading-relaxed">{hotel.address || '地址待確認'}</span>
                         </div>
 
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                          <Phone size={16} className="flex-shrink-0 text-gray-400" />
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Phone size={14} className="flex-shrink-0 text-gray-400" />
                           <span>{hotel.phone || '電話待確認'}</span>
                         </div>
 
                         {hotel.morningCall && (
-                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100 mt-2">
-                            <Clock size={14} />
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded text-[11px] font-medium border border-blue-100 mt-1">
+                            <Clock size={12} />
                             Morning Call: {hotel.morningCall}
                           </div>
                         )}
                         {hotel.description && (
-                          <div className="mt-4 pt-3 border-t border-gray-100">
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{hotel.description}</p>
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <p className="text-xs text-gray-700 whitespace-pre-wrap leading-relaxed">{hotel.description}</p>
                           </div>
                         )}
                       </div>

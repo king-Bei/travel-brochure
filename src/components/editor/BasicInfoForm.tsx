@@ -173,11 +173,10 @@ export function BasicInfoForm() {
 
         <div>
           <label className={labelClassName}>旅遊主標題 *</label>
-          <input
-            type="text"
+          <textarea
             value={data.title}
             onChange={(e) => updateData({ title: e.target.value })}
-            className={`${inputClassName} font-medium text-base`}
+            className={`${inputClassName} font-medium text-base h-20 resize-none`}
             placeholder="例如：馬來西亞～雪蘭莪生態五日遊"
           />
         </div>

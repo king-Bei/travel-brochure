@@ -93,6 +93,24 @@ export interface MapImage {
   fit?: 'cover' | 'contain';   // 滿版裁切 或 保持比例
 }
 
+export interface RoomingEntry {
+  id: string;
+  roomNumber: string; // 回溯相容：預設房號
+  names: string[]; // ['Name 1', 'Name 2'] 支援單人或多人
+  roomType: string; // '雙人房', '單人房', etc.
+  remarks?: string;
+  hotelName?: string; // 回溯相容
+  hotelRooms?: Record<string, string>; // 新增：飯店名稱 -> 房號 的對應
+}
+
+export interface CustomPageData {
+  id: string; // Unique ID for keying multiple custom pages if needed
+  title: string;
+  content: string; // rich text
+  images: string[];
+  layout: 'top-1-bottom-2' | 'left-1-right-2' | 'grid-4' | 'single'; // Reuse some standard layouts
+}
+
 export interface ThemeColors {
   primary: string;
   secondary: string;
@@ -104,22 +122,26 @@ export type SectionId =
   | 'attraction'
   | 'hotel'
   | 'hotelDetail'
+  | 'roomingList' // 新增分房表
   | 'map'
   | 'itinerary'
   | 'packing'
   | 'tips'
-  | 'gridTips';
+  | 'gridTips'
+  | 'customPage'; // 新增自由頁面
 
 export const defaultSectionOrder: SectionId[] = [
   'flight',
   'attraction',
   'hotel',
   'hotelDetail',
+  'roomingList',
   'map',
   'itinerary',
   'packing',
   'tips',
-  'gridTips'
+  'gridTips',
+  'customPage'
 ];
 
 export interface BrochureData {
@@ -145,6 +167,8 @@ export interface BrochureData {
   flights: FlightInfo[]; // 修改為數組以支援多段航班 (中轉)
   hotels: Hotel[];
   hotelDetails: HotelDetail[]; // 飯店詳細介紹頁面
+  roomingList?: RoomingEntry[]; // 新增：分房表，搭配飯店住宿
+  customPages: CustomPageData[]; // 新增：自由編輯頁面
   itineraries: ItineraryDay[];
   attractions: Attraction[];   // 景點介紹頁面
   mapPage?: MapImage;          // 整頁地圖
@@ -158,6 +182,7 @@ export interface BrochureData {
   tocImage?: string; // 新增目錄自訂圖片
   showTOCItineraryDetails?: boolean; // 新增：目錄是否顯示行程詳情
   notesCount?: number; // 新增：筆記頁數
+  showRoomNumber?: boolean; // 新增：是否顯示房號
   headerLogo?: string; // 新增頁首專屬(客戶) Logo
   headerText?: string; // 新增頁首自訂名稱(客戶名稱)
 }
@@ -311,6 +336,16 @@ export function createDefaultData(): BrochureData {
     ],
     hotels: [],
     hotelDetails: [],
+    roomingList: Array.from({ length: 15 }, (_, i) => ({
+      id: `room-${i}`,
+      roomNumber: (i + 1).toString(),
+      names: ['', ''],
+      roomType: '雙人房',
+      remarks: '',
+      hotelName: ''
+    })), // 預設產生15間房，最多30人
+    customPages: [], // 新增預設空白
+    showRoomNumber: true, // 預設顯示房號
     itineraries: [],
     attractions: [],
     packingList: [...defaultPackingList],

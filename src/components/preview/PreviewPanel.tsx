@@ -13,23 +13,39 @@ import { PackingPage } from './PackingPage';
 import { TipsPage } from './TipsPage';
 import { TipsGridPage } from './TipsGridPage';
 import { NotesPage } from './NotesPage';
+import { RoomingListPage } from './RoomingListPage';
+import { CustomPage } from './CustomPage';
 import type { SectionId } from '../../types';
 
 export function PreviewPanel() {
   const { data } = useBrochure();
 
-  // 確保舊資料也有預設值
-  const currentOrder = data.sectionOrder || [
-    'flight',
-    'attraction',
-    'hotel',
-    'hotelDetail',
-    'map',
-    'itinerary',
-    'packing',
-    'tips',
-    'gridTips'
+  // 雙重保險：如果 Context 沒補齊，這裡再次補齊，確保分房與自訂頁面一定會顯示
+  const ALL_SECTION_IDS: SectionId[] = [
+    'flight', 'attraction', 'hotel', 'hotelDetail', 'roomingList', 'map', 'itinerary', 'packing', 'tips', 'gridTips', 'customPage'
   ];
+
+  const currentOrder = React.useMemo(() => {
+    const order = data.sectionOrder || [];
+    const missing = ALL_SECTION_IDS.filter(id => !order.includes(id));
+    return [...order, ...missing].filter(id => ALL_SECTION_IDS.includes(id as SectionId));
+  }, [data.sectionOrder]);
+
+  const SECTION_LABELS: Record<string, string> = {
+    cover: '封面',
+    toc: '目錄',
+    flight: '航班',
+    attraction: '景點',
+    hotel: '住宿',
+    hotelDetail: '細節',
+    roomingList: '分房',
+    map: '地圖',
+    itinerary: '行程',
+    packing: '攜帶',
+    tips: '注意',
+    gridTips: '提醒',
+    customPage: '自訂',
+  };
 
   const renderSection = (sectionId: SectionId) => {
     switch (sectionId) {
@@ -41,6 +57,8 @@ export function PreviewPanel() {
         return <HotelPage key="hotel" />;
       case 'hotelDetail':
         return <HotelDetailPage key="hotelDetail" />;
+      case 'roomingList':
+        return <RoomingListPage key="roomingList" />;
       case 'map':
         return <MapPage key="map" />;
       case 'itinerary':
@@ -51,6 +69,8 @@ export function PreviewPanel() {
         return <TipsPage key="tips" />;
       case 'gridTips':
         return <TipsGridPage key="gridTips" />;
+      case 'customPage':
+        return <CustomPage key="customPage" />;
       default:
         return null;
     }
@@ -64,20 +84,6 @@ export function PreviewPanel() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
-
-  const SECTION_LABELS: Record<string, string> = {
-    cover: '封面',
-    toc: '目錄',
-    flight: '航班',
-    attraction: '景點',
-    hotel: '住宿',
-    hotelDetail: '細節',
-    map: '地圖',
-    itinerary: '行程',
-    packing: '攜帶',
-    tips: '注意',
-    gridTips: '提醒',
   };
 
   const PageContainer = ({ children, title, id }: { children: React.ReactNode, title: string, id: string }) => (
@@ -112,8 +118,11 @@ export function PreviewPanel() {
           <button
             key={sectionId}
             onClick={() => scrollToSection(sectionId)}
-            className="px-3 py-1.5 rounded-lg text-xs font-black text-gray-500 hover:bg-white transition-all hover:shadow-sm uppercase tracking-widest whitespace-nowrap"
-            style={{ color: data.theme.primary === sectionId ? data.theme.primary : undefined }}
+            className="px-3 py-1.5 rounded-lg text-xs font-black transition-all hover:bg-white hover:shadow-sm uppercase tracking-widest whitespace-nowrap"
+            style={{
+              color: data.theme.primary,
+              backgroundColor: 'transparent'
+            }}
           >
             {SECTION_LABELS[sectionId] || sectionId}
           </button>

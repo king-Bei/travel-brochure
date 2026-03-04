@@ -7,9 +7,11 @@ import { PackingListForm } from './PackingListForm';
 import { TipsForm } from './TipsForm';
 import { AttractionForm } from './AttractionForm';
 import { HotelDetailForm } from './HotelDetailForm';
+import { RoomingListForm } from './RoomingListForm';
 import { MapForm } from './MapForm';
 import { ThemeSettings } from './ThemeSettings';
 import { SectionOrderForm } from './SectionOrderForm';
+import { CustomPageForm } from './CustomPageForm';
 import {
   ChevronDown,
   ChevronUp,
@@ -24,10 +26,12 @@ import {
   CheckSquare,
   AlertCircle,
   Palette,
-  Bookmark
+  Bookmark,
+  Users,
+  FileText
 } from 'lucide-react';
 
-type Section = 'basic' | 'order' | 'flight' | 'hotel' | 'hotel-detail' | 'attraction' | 'map' | 'itinerary' | 'packing' | 'tips' | 'theme';
+type Section = 'basic' | 'order' | 'flight' | 'hotel' | 'hotel-detail' | 'rooming-list' | 'attraction' | 'map' | 'itinerary' | 'packing' | 'tips' | 'custom-page' | 'theme';
 
 interface SectionConfig {
   id: Section;
@@ -43,11 +47,13 @@ const sections: SectionConfig[] = [
   { id: 'flight', label: '航班資訊', icon: <Plane size={16} />, component: <FlightForm /> },
   { id: 'hotel', label: '簡要飯店列表 (行程用)', icon: <Building2 size={16} />, component: <HotelForm /> },
   { id: 'hotel-detail', label: '飯店詳細介紹頁面', icon: <BedDouble size={16} />, component: <HotelDetailForm /> },
+  { id: 'rooming-list', label: '分房表 (與飯店搭配)', icon: <Users size={16} />, component: <RoomingListForm /> },
   { id: 'attraction', label: '景點介紹頁面', icon: <MapPin size={16} />, component: <AttractionForm /> },
   { id: 'itinerary', label: '每日行程大綱', icon: <Calendar size={16} />, component: <ItineraryForm /> },
   { id: 'map', label: '旅遊地圖 (整頁)', icon: <MapIcon size={16} />, component: <MapForm /> },
   { id: 'packing', label: '旅遊物品', icon: <CheckSquare size={16} />, component: <PackingListForm /> },
   { id: 'tips', label: '旅遊叮嚀', icon: <AlertCircle size={16} />, component: <TipsForm /> },
+  { id: 'custom-page', label: '自訂圖文頁面', icon: <FileText size={16} />, component: <CustomPageForm /> },
   { id: 'theme', label: '色系設定', icon: <Palette size={16} />, component: <ThemeSettings /> },
 ];
 
@@ -87,22 +93,28 @@ export function EditorPanel() {
   return (
     <div className="h-full flex flex-col bg-white border-r">
       {/* 快速導覽書籤列 */}
-      <div className="flex items-center gap-1.5 p-2 bg-gray-50/50 border-b overflow-x-auto no-scrollbar scroll-smooth">
+      <div className="flex items-center gap-1.5 p-2 bg-gray-50/50 border-b no-scrollbar scroll-smooth z-[60] overflow-visible">
         <div className="flex-shrink-0 px-2 py-1 flex items-center gap-1 text-gray-400">
           <Bookmark size={14} className="fill-current" />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Quick</span>
+          <span className="text-[10px] font-black uppercase tracking-tighter">快速選單</span>
         </div>
         <div className="h-4 w-px bg-gray-200 mx-1 flex-shrink-0" />
         {sections.map((section) => (
-          <button
-            key={`bookmark-${section.id}`}
-            onClick={() => scrollToSection(section.id)}
-            title={section.label}
-            className={`flex-shrink-0 p-1.5 rounded-md transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 text-gray-400 hover:text-blue-600 ${openSections.has(section.id) ? 'bg-white shadow-sm border-gray-100 text-blue-500' : ''
-              }`}
-          >
-            {section.icon}
-          </button>
+          <div key={`bookmark-${section.id}`} className="relative group/tip">
+            <button
+              onClick={() => scrollToSection(section.id)}
+              className={`flex-shrink-0 p-1.5 rounded-md transition-all hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-200 text-gray-400 hover:text-blue-600 ${openSections.has(section.id) ? 'bg-white shadow-sm border-gray-100 text-blue-500' : ''
+                }`}
+            >
+              {section.icon}
+            </button>
+            {/* 懸浮文字輔助說明 (Tooltip) */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded shadow-xl opacity-0 group-hover/tip:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap z-50 -translate-y-1 group-hover/tip:translate-y-0">
+              {section.label}
+              {/* Tooltip 小箭頭 (置於上方) */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-b-4 border-b-gray-800" />
+            </div>
+          </div>
         ))}
       </div>
 

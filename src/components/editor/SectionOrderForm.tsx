@@ -13,6 +13,8 @@ const SECTION_LABELS: Record<SectionId, string> = {
     packing: '攜帶物品清單',
     tips: '旅遊注意事項',
     gridTips: '貼心小叮嚀',
+    roomingList: '分房表',
+    customPage: '自訂圖文頁面',
 };
 
 export function SectionOrderForm() {
@@ -27,7 +29,9 @@ export function SectionOrderForm() {
         'itinerary',
         'packing',
         'tips',
-        'gridTips'
+        'gridTips',
+        'roomingList',
+        'customPage'
     ];
 
     // 確保舊資料也有 sectionOrder，並補足缺失的區塊

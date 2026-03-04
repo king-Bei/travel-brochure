@@ -174,10 +174,14 @@ export function getSectionPageCount(sectionId: SectionId, data: BrochureData): n
             return getItineraryPageCount(data.itineraries || []);
         case 'packing':
             return 1;
+        case 'roomingList':
+            return (data.roomingList && data.roomingList.length > 0) ? 1 : 0;
         case 'tips':
             return getTipsPageCount(data.tips);
         case 'gridTips':
             return (data.gridTips && data.gridTips.length > 0) ? 1 : 0;
+        case 'customPage':
+            return data.customPages?.length || 0;
         default:
             return 0;
     }

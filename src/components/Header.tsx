@@ -97,7 +97,7 @@ export function Header({
         const printStyle = document.createElement('style');
         printStyle.id = 'force-fullpage-print';
         printStyle.innerHTML = `
-            @page { size: A4 portrait; margin: 0 !important; }
+            @page { size: A5 portrait; margin: 0 !important; }
             @media print {
                 html, body { margin: 0 !important; padding: 0 !important; }
             }

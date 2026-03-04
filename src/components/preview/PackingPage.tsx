@@ -39,104 +39,97 @@ export function PackingPage() {
   ];
 
   const CheckboxItem = ({ label, important = false, className = "" }: { label: string, important?: boolean, className?: string }) => (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <div className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${important ? 'border-amber-400 bg-amber-50' : 'border-gray-300'}`}>
-        {important && <div className="w-1.5 h-1.5 bg-amber-400 rounded-full" />}
+    <div className={`flex items-center gap-1.5 h-4.5 ${className}`}>
+      <div className={`w-3.5 h-3.5 rounded-sm border-[1.5px] flex-shrink-0 flex items-center justify-center ${important ? 'border-amber-400 bg-amber-50' : 'border-gray-300'}`}>
+        {important && <div className="w-1 h-1 bg-amber-400 rounded-full" />}
       </div>
-      <span className={`text-[13px] font-medium whitespace-nowrap ${important ? 'text-amber-700 font-bold flex items-center gap-1' : 'text-gray-700'}`}>
+      <span className={`text-[11px] font-medium whitespace-nowrap leading-none ${important ? 'text-amber-700 font-bold flex items-center gap-1' : 'text-gray-700'}`}>
         {label}
-        {important && <span className="text-[10px] bg-amber-100 text-amber-600 px-1 rounded-sm leading-none py-0.5 border border-amber-200 uppercase tracking-tighter">Urgent</span>}
+        {important && <span className="text-[8px] bg-amber-100 text-amber-600 px-1 rounded-sm leading-none py-0.5 border border-amber-200 uppercase tracking-tighter">Urgent</span>}
       </span>
     </div>
   );
 
   const SectionTitle = ({ title }: { title: string }) => (
-    <h3 className="text-[16px] font-black text-gray-900 tracking-wider mb-1.5 border-b border-gray-100 pb-0.5 uppercase">
+    <h3 className="text-[12px] font-black text-gray-900 tracking-wider mb-1 border-b border-gray-100 pb-0.5 uppercase">
       {title}
     </h3>
   );
 
   return (
     <PageWrapper title="旅遊物品核對表" icon={<CheckSquare size={24} />}>
-      <div className="flex flex-col h-full py-1">
+      <div className="flex flex-col h-full py-0">
         {/* 頂部標語 */}
-        <div className="border-b-2 border-gray-900 mb-4 pb-0.5">
-          <p className="text-[13.5px] font-black tracking-tight text-gray-800">
+        <div className="border-b-2 border-gray-900 mb-1 pb-0">
+          <p className="text-[14px] font-black tracking-tight text-gray-800 leading-none">
             僅供參考，可依個人需求調整清單，並勾選是否都帶齊喔！
           </p>
         </div>
 
         {/* 重要物品欄 (全寬) */}
-        <div className="mb-4">
+        <div className="mb-1">
           <SectionTitle title="IMPORTANT" />
-          <div className="flex gap-x-12">
+          <div className="flex gap-x-6">
             {sections[0].items.map((item, i) => (
               <CheckboxItem key={i} label={item} />
             ))}
           </div>
         </div>
 
-        {/* 兩欄配置 */}
-        <div className="grid grid-cols-12 gap-x-10 flex-grow min-h-0">
-          {/* 左側欄 */}
-          <div className="col-span-7 flex flex-col space-y-4">
+        {/* 三欄配置 */}
+        <div className="grid grid-cols-3 gap-x-4 flex-grow min-h-0 mt-3">
+          {/* 第一欄 */}
+          <div className="flex flex-col space-y-3">
             <div>
               <SectionTitle title="CLOTHING" />
-              <div className="grid grid-cols-3 gap-y-1">
+              <div className="flex flex-col space-y-1">
                 {sections[1].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
               </div>
             </div>
             <div>
-              <SectionTitle title="CARRY-ON" />
-              <div className="grid grid-cols-2 gap-y-1">
-                {sections[3].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
+              <SectionTitle title="SKIN CARES" />
+              <div className="flex flex-col space-y-1">
+                {sections[6].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
               </div>
             </div>
+          </div>
+
+          {/* 第二欄 */}
+          <div className="flex flex-col space-y-3">
             <div>
               <SectionTitle title="TOILETRIES" />
-              <div className="grid grid-cols-2 gap-y-1">
+              <div className="flex flex-col space-y-1">
                 {sections[5].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
               </div>
             </div>
             <div>
-              <SectionTitle title="SKIN CARES" />
-              <div className="grid grid-cols-2 gap-y-1">
-                {sections[6].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
-              </div>
-            </div>
-            <div>
               <SectionTitle title="ELECTRONICS" />
-              <div className="grid grid-cols-2 gap-y-1">
+              <div className="flex flex-col space-y-1">
                 {sections[4].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
               </div>
             </div>
           </div>
 
-          {/* 右側欄 */}
-          <div className="col-span-5 flex flex-col space-y-4">
+          {/* 第三欄 */}
+          <div className="flex flex-col space-y-3">
+            <div>
+              <SectionTitle title="CARRY-ON" />
+              <div className="flex flex-col space-y-1">
+                {sections[3].items.map((item, i) => <CheckboxItem key={i} label={item} />)}
+              </div>
+            </div>
             <div>
               <SectionTitle title="OTHERS" />
-              <div className="flex flex-col gap-y-1">
+              <div className="flex flex-col space-y-1">
                 {sections[2].items.map((item, i) => (
                   <div key={i} className="flex flex-col gap-1">
                     <CheckboxItem label={item} />
                     {item === '其他：' && (
-                      <div className="pl-6 space-y-1 mt-0.5">
-                        {/* 顯示使用者在編輯器新增的補充分類項目 */}
-                        {data.packingList.length > 0 ? (
-                          data.packingList.map((item, idx) => (
-                            <div key={idx} className="flex flex-col gap-1">
-                              <CheckboxItem label={item.text} important={item.important} />
-                              <div className="border-b border-gray-300 w-full h-[1px] mt-0.5 opacity-50" />
-                            </div>
-                          ))
-                        ) : (
-                          // 若無設定，顯示預設填空線
-                          <>
-                            <div className="border-b border-gray-300 w-full h-3" />
-                            <div className="border-b border-gray-300 w-full h-3" />
-                          </>
-                        )}
+                      <div className="space-y-3 mt-1 px-1">
+                        <div className="border-b border-gray-300 w-full h-[1px]" />
+                        <div className="border-b border-gray-300 w-full h-[1px]" />
+                        <div className="border-b border-gray-300 w-full h-[1px]" />
+                        <div className="border-b border-gray-300 w-full h-[1px]" />
                       </div>
                     )}
                   </div>
@@ -146,17 +139,29 @@ export function PackingPage() {
           </div>
         </div>
 
+        {/* 使用者新增的其餘項目 (如果有)，也用三欄呈現 */}
+        {data.packingList && data.packingList.length > 0 && (
+          <div className="mt-2">
+            <SectionTitle title="ADDITIONAL ITEMS" />
+            <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+              {data.packingList.map((item, idx) => (
+                <CheckboxItem key={idx} label={item.text} important={item.important} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 底部提醒事項 */}
         <div className="mt-auto space-y-1 pt-2 border-t border-gray-100">
-          <div className="flex items-start gap-2 text-[10.5px] text-gray-600 leading-[1.3] font-medium">
+          <div className="flex items-start gap-1 text-[8.5px] text-gray-600 leading-[1.3] font-medium">
             <span className="text-gray-900">●</span>
             <span>刮鬍泡、噴霧水、萬用刀、螺絲起子、壓縮氣體、液體容器或刀具等，不得隨身攜帶。</span>
           </div>
-          <div className="flex items-start gap-2 text-[10.5px] text-gray-600 leading-[1.3] font-medium">
+          <div className="flex items-start gap-1 text-[8.5px] text-gray-600 leading-[1.3] font-medium">
             <span className="text-gray-900">●</span>
             <span>液體、膠狀物品及液化氣體，如果以容器裝妥且每樣不超過100毫升，可放入隨身行李中。</span>
           </div>
-          <div className="flex items-start gap-2 text-[10.5px] text-red-500 leading-[1.3] font-medium">
+          <div className="flex items-start gap-1 text-[8.5px] text-red-500 leading-[1.3] font-medium">
             <span className="text-red-600">●</span>
             <span>鋰電池、打火機及行動電源，不可放入託運行李內，請隨身攜帶；含有鋰或鋰離子電池之電子裝 置，如手錶、計算機、照相機、手機、手提電腦及錄影錄影機等，須放置於手提行李中。</span>
           </div>
