@@ -72,6 +72,15 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   });
 
   const updateData = (updates: Partial<BrochureData>) => {
+    // 判斷是否只包含允許在鎖定狀態下更新的欄位 (metadata 或鎖定狀態本身)
+    const allowedKeys = ['isLocked', 'serverUpdatedAt', 'isPublished', 'publishedAt', 'expiresAt', 'publishedImages', 'ebookId', 'publishHistory', 'version'];
+    const isOnlyAllowedUpdates = Object.keys(updates).every(key => allowedKeys.includes(key));
+
+    if (data.isLocked && !isOnlyAllowedUpdates) {
+      alert('資料已鎖定，禁止修改。請先解鎖！');
+      return;
+    }
+
     setData(prev => {
       const newData = { ...prev, ...updates };
       // 依使用者要求，取消 "天數更改時自動重設同步飯店與行程" 邏汇
@@ -80,6 +89,10 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   };
 
   const setTheme = (theme: ThemeColors | keyof typeof themes) => {
+    if (data.isLocked) {
+      alert('資料已鎖定，禁止修改。請先解鎖！');
+      return;
+    }
     if (typeof theme === 'string') {
       updateData({ theme: themes[theme] || defaultTheme });
     } else {
@@ -88,6 +101,10 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   };
 
   const addPackingItem = (text: string, important: boolean = false) => {
+    if (data.isLocked) {
+      alert('資料已鎖定，禁止修改。請先解鎖！');
+      return;
+    }
     setData(prev => ({
       ...prev,
       packingList: [...prev.packingList, { text, important }],
@@ -95,6 +112,10 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   };
 
   const removePackingItem = (index: number) => {
+    if (data.isLocked) {
+      alert('資料已鎖定，禁止修改。請先解鎖！');
+      return;
+    }
     setData(prev => ({
       ...prev,
       packingList: prev.packingList.filter((_, i) => i !== index),
@@ -102,6 +123,10 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   };
 
   const updatePageSetting = (id: string, updates: { fontSize?: number; imageScale?: number }) => {
+    if (data.isLocked) {
+      alert('資料已鎖定，禁止修改。請先解鎖！');
+      return;
+    }
     setData(prev => ({
       ...prev,
       pageSettings: {
