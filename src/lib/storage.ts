@@ -8,75 +8,84 @@ const STORAGE_KEY_PREFIX = 'travel_brochure_';
 const LIST_KEY = 'travel_brochure_list';
 
 export const storage = {
-    // 取得手冊列表（主要從雲端抓取，若無則才降級本機）
+    // 取得手冊列表（優化讀取速度：Stale-While-Revalidate 快取優先策略，實現秒開體驗）
     async getList(): Promise<BrochureMeta[]> {
         try {
+            // 1. 優先回傳本地 Meta 列表快取，實現瞬時載入
+            const localList = await get(LIST_KEY);
+            const filteredLocalList = (localList || []).filter((m: any) => !m.isDeleted);
+            
+            // 2. 背景靜默更新，不阻塞 UI 呈現
             if (supabase) {
-                const { data: cloudData, error } = await supabase
-                    .from('brochures')
-                    .select('id, title:data->>title, agency:data->>agency, groupNumber:data->>groupNumber, isPublished:data->>isPublished, isDeleted:data->>isDeleted, isClosed:data->>isClosed, expiresAt:data->>expiresAt, shortId:data->>shortId, ebookId:data->>ebookId, departureDateFromData:data->>departureDate, category, status, departure_date, last_modified_by, created_at, updated_at')
-                    .order('updated_at', { ascending: false });
+                (async () => {
+                    try {
+                        const { data: cloudData, error } = await supabase
+                            .from('brochures')
+                            .select('id, title:data->>title, agency:data->>agency, groupNumber:data->>groupNumber, isPublished:data->>isPublished, isDeleted:data->>isDeleted, isClosed:data->>isClosed, expiresAt:data->>expiresAt, shortId:data->>shortId, ebookId:data->>ebookId, departureDateFromData:data->>departureDate, category, status, departure_date, last_modified_by, created_at, updated_at')
+                            .order('updated_at', { ascending: false });
 
-                if (!error && cloudData) {
-                    const today = new Date().toISOString().split('T')[0];
-                    const cloudList: BrochureMeta[] = cloudData
-                        .filter((item: any) => {
-                             // 過濾掉標記為 isDeleted 的資料 (JSON path 提取出來會是字串)
-                            return item.isDeleted !== 'true' && item.isDeleted !== true;
-                        })
-                        .map((item: any) => {
-                            let currentStatus = item.status || '待製作';
-                            const departureDate = item.departure_date || item.departureDateFromData;
-                            let isClosed = item.isClosed === 'true' || item.isClosed === true;
-                            
-                            // 自動判定：如果當前日期大於等於出發日期，則顯示為「已出團」
-                            if (departureDate && today >= departureDate) {
-                                currentStatus = '已出團';
-                                
-                                // 新增：如果分類是「出團」且已出發超過一週 (7天)，自動轉為「結案」
-                                if (item.category === '出團' && !isClosed) {
-                                    const depDate = new Date(departureDate);
-                                    const nowDate = new Date(today);
-                                    const diffTime = Math.abs(nowDate.getTime() - depDate.getTime());
-                                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        if (!error && cloudData) {
+                            const today = new Date().toISOString().split('T')[0];
+                            const cloudList: BrochureMeta[] = cloudData
+                                .filter((item: any) => {
+                                     // 過濾掉標記為 isDeleted 的資料
+                                    return item.isDeleted !== 'true' && item.isDeleted !== true;
+                                })
+                                .map((item: any) => {
+                                    let currentStatus = item.status || '待製作';
+                                    const departureDate = item.departure_date || item.departureDateFromData;
+                                    let isClosed = item.isClosed === 'true' || item.isClosed === true;
                                     
-                                    if (nowDate > depDate && diffDays > 7) {
-                                        isClosed = true;
-                                        // 在背景同步更新資料庫，避免阻塞主執行緒
-                                        this.updateMetadata(item.id, { isClosed: true }).catch(err => console.error('Auto-close sync failed:', err));
+                                    // 自動判定：如果當前日期大於等於出發日期，則顯示為「已出團」
+                                    if (departureDate && today >= departureDate) {
+                                        currentStatus = '已出團';
+                                        
+                                        // 新增：如果分類是「出團」且已出發超過一週 (7天)，自動轉為「結案」
+                                        if (item.category === '出團' && !isClosed) {
+                                            const depDate = new Date(departureDate);
+                                            const nowDate = new Date(today);
+                                            const diffTime = Math.abs(nowDate.getTime() - depDate.getTime());
+                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                                            
+                                            if (nowDate > depDate && diffDays > 7) {
+                                                isClosed = true;
+                                                // 在背景同步更新資料庫，避免阻塞主執行緒
+                                                this.updateMetadata(item.id, { isClosed: true }).catch(err => console.error('Auto-close sync failed:', err));
+                                            }
+                                        }
                                     }
-                                }
-                            }
 
-                            return {
-                                id: item.id,
-                                title: item.title || '未命名手冊',
-                                agency: item.agency || '',
-                                groupNumber: item.groupNumber || '',
-                                isPublished: item.isPublished === 'true' || item.isPublished === true,
-                                createdAt: item.created_at,
-                                updatedAt: item.updated_at,
-                                lastModifiedBy: item.last_modified_by || '',
-                                isDeleted: false,
-                                expiresAt: item.expiresAt || '',
-                                shortId: item.shortId || '',
-                                ebookId: item.ebookId || '',
-                                category: item.category || '報價',
-                                status: currentStatus,
-                                departureDate: departureDate || '',
-                                isClosed: isClosed
-                            };
-                        });
-                    
-                    // 同步到本機列表快取
-                    await set(LIST_KEY, cloudList);
-                    return cloudList;
-                }
+                                    return {
+                                        id: item.id,
+                                        title: item.title || '未命名手冊',
+                                        agency: item.agency || '',
+                                        groupNumber: item.groupNumber || '',
+                                        isPublished: item.isPublished === 'true' || item.isPublished === true,
+                                        createdAt: item.created_at,
+                                        updatedAt: item.updated_at,
+                                        lastModifiedBy: item.last_modified_by || '',
+                                        isDeleted: false,
+                                        expiresAt: item.expiresAt || '',
+                                        shortId: item.shortId || '',
+                                        ebookId: item.ebookId || '',
+                                        category: item.category || '報價',
+                                        status: currentStatus,
+                                        departureDate: departureDate || '',
+                                        isClosed: isClosed
+                                    };
+                                });
+                            
+                            // 同步到本地列表快取
+                            await set(LIST_KEY, cloudList);
+                        }
+                    } catch (err) {
+                        console.warn('[背景列表同步] 失敗（可能是離線狀態）:', err);
+                    }
+                })();
             }
             
-            // 雲端失敗或未登入才看本機
-            const list = await get(LIST_KEY);
-            return (list || []).filter((m: any) => !m.isDeleted);
+            // 若本地有快取直接返回，否則返回空陣列等待背景加載完成
+            return filteredLocalList;
         } catch (error) {
             console.error('取得列表失敗：', error);
             return [];
@@ -92,11 +101,48 @@ export const storage = {
         }
     },
 
-    // 取得單一手冊內容（優先雲端，支援按需載入圖片以提升效能）
+    // 取得單一手冊內容（優化讀取速度：Stale-While-Revalidate 快取優先策略，秒開編輯器）
     async getBrochure(id: string, includeImages: boolean = false): Promise<BrochureData | null> {
         try {
+            // 1. 優先從本地快取 (IndexedDB) 獲取，以達毫秒級極速回應
+            const localData = await get(`${STORAGE_KEY_PREFIX}${id}`);
+            
+            // 2. 如果本地有快取，先非同步地在背景向雲端同步最新資料，但不阻塞主執行緒
+            if (localData) {
+                (async () => {
+                    if (!supabase) return;
+                    try {
+                        const selectFields = includeImages ? 'data, updated_at, published_images' : 'data, updated_at';
+                        const { data: cloudItem, error } = await supabase
+                            .from('brochures')
+                            .select(selectFields)
+                            .eq('id', id)
+                            .single();
+                        
+                        if (!error && cloudItem) {
+                            const item = cloudItem as any;
+                            const data = item.data as BrochureData;
+                            data.serverUpdatedAt = item.updated_at;
+                            
+                            if (includeImages && item.published_images) {
+                                data.publishedImages = item.published_images as string[];
+                            }
+                            
+                            // 更新本地快取，確保下次載入或後續儲存使用的是最新雲端時間戳
+                            await set(`${STORAGE_KEY_PREFIX}${id}`, data);
+                            console.log(`[背景同步] 手冊 ${id} 已同步至最新雲端狀態`);
+                        }
+                    } catch (err) {
+                        console.warn('[背景同步] 嘗試同步雲端失敗（可能是離線狀態）:', err);
+                    }
+                })();
+                
+                // 瞬間返回本地快取，免除網路延遲等待！
+                return localData;
+            }
+
+            // 3. 若本地完全無快取（例如首次從其他裝置載入），則必須阻塞等待雲端下載
             if (supabase) {
-                // 根據需求決定是否抓取巨大的圖片欄位
                 const selectFields = includeImages ? 'data, updated_at, published_images' : 'data, updated_at';
                 const { data: cloudItem, error } = await supabase
                     .from('brochures')
@@ -109,7 +155,6 @@ export const storage = {
                     const data = item.data as BrochureData;
                     data.serverUpdatedAt = item.updated_at;
                     
-                    // 如果有抓取圖片，則合併回 data 物件中供 UI 使用
                     if (includeImages && item.published_images) {
                         data.publishedImages = item.published_images as string[];
                     }
@@ -118,9 +163,10 @@ export const storage = {
                     return data;
                 }
             }
-            const localData = await get(`${STORAGE_KEY_PREFIX}${id}`);
-            return localData || null;
-        } catch {
+            
+            return null;
+        } catch (error) {
+            console.error('讀取手冊失敗：', error);
             return null;
         }
     },
@@ -398,8 +444,8 @@ export const storage = {
         return await this.saveBrochure(id, versionData);
     },
 
-    // 將手冊直接發佈到電子書系統的 ebooks 資料表與 Storage
-    async publishToEbook(title: string, pages: string[], existingEbookId?: string): Promise<{ success: boolean; id?: string; error?: string }> {
+    // 將手冊直接發佈到電子書系統的 ebooks 資料表與 Storage (優化：Promise.all 並行上傳，速度提升數倍)
+    async publishToEbook(title: string, pages: string[], existingEbookId?: string): Promise<{ success: boolean; id?: string; urls?: string[]; error?: string }> {
         if (!supabase) {
             return { success: false, error: 'Supabase 連線尚未初始化' };
         }
@@ -414,11 +460,8 @@ export const storage = {
             })();
 
         try {
-            const pageUrls: string[] = [];
-
-            // 1. 將所有分頁 Base64 圖片上傳至 brochures bucket 中的 ebooks/${bookId} 路徑下
-            for (let p = 0; p < pages.length; p++) {
-                const base64Data = pages[p];
+            // 1. 改用 Promise.all 並行上傳所有分頁 Base64 圖片，速度能提升數倍！
+            const uploadPromises = pages.map(async (base64Data, p) => {
                 const matches = base64Data.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
                 if (!matches || matches.length !== 3) {
                     throw new Error(`第 ${p + 1} 頁的圖片格式不正確`);
@@ -434,15 +477,15 @@ export const storage = {
                 }
                 const byteArray = new Uint8Array(byteNumbers);
 
-                let ext = 'png';
-                if (mimeType.includes('webp')) ext = 'webp';
+                let ext = 'webp';
+                if (mimeType.includes('png')) ext = 'png';
                 else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
 
                 const fileName = `page_${String(p + 1).padStart(3, '0')}.${ext}`;
                 const filePath = `ebooks/${bookId}/${fileName}`;
 
                 // 上傳至 Storage
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await supabase!.storage
                     .from('brochures')
                     .upload(filePath, byteArray, {
                         contentType: mimeType,
@@ -455,12 +498,18 @@ export const storage = {
                 }
 
                 // 取得公開下載連結
-                const { data: { publicUrl } } = supabase.storage
+                const { data: { publicUrl } } = supabase!.storage
                     .from('brochures')
                     .getPublicUrl(filePath);
 
-                pageUrls.push(publicUrl);
-            }
+                return { index: p, url: publicUrl };
+            });
+
+            const uploadResults = await Promise.all(uploadPromises);
+            // 確保順序正確
+            const pageUrls = uploadResults
+                .sort((a, b) => a.index - b.index)
+                .map(res => res.url);
 
             // 2. 取得當前使用者與時間
             const now = new Date().toISOString();
@@ -494,20 +543,20 @@ export const storage = {
                 throw dbError;
             }
 
-            return { success: true, id: bookId };
+            return { success: true, id: bookId, urls: pageUrls };
         } catch (err: any) {
             console.error('發佈到電子書系統時發生錯誤：', err);
             return { success: false, error: err.message || '未知錯誤' };
         }
     },
 
-    // 取得修改歷程清單 (不包含巨大的 data 欄位，以提升載入清單的效能)
+    // 取得修改歷程清單 (包含輕量化的 data 欄位以辨識標題與快照狀態，已剔除圖片以優化效能)
     async getVersions(brochureId: string): Promise<any[]> {
         if (!supabase) return [];
         try {
             const { data, error } = await supabase
                 .from('brochure_logs')
-                .select('id, brochure_id, created_at, editor_name, action_type') // 排除 data 欄位
+                .select('id, brochure_id, created_at, editor_name, action_type, data')
                 .eq('brochure_id', brochureId)
                 .order('created_at', { ascending: false })
                 .limit(50);

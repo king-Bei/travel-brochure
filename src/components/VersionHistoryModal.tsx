@@ -145,31 +145,42 @@ export function VersionHistoryModal({ isOpen, onClose, brochureId, onRestore }: 
                           </span>
                           <span className="w-1 h-1 bg-gray-200 rounded-full" />
                           <span className="flex items-center gap-1">
-                            <AlertCircle size={12} /> {version.data ? (version.data.title || '未命名手冊') : 'Legacy Record'}
+                            <AlertCircle size={12} /> {
+                              version.action_type === 'status_change'
+                                ? (version.data?.note || '變更製作狀態')
+                                : version.data 
+                                  ? (version.data.title || '未命名手冊') 
+                                  : '無版本快照'
+                            }
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleRestore(version)}
-                      disabled={restoringId !== null || !version.data}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                        !version.data 
-                          ? 'bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'
-                          : restoringId === version.id
-                            ? 'bg-blue-50 text-blue-400'
-                            : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100'
-                      }`}
-                      title={!version.data ? "此紀錄不含資料快照，無法恢復" : "將手冊恢復至此版本"}
-                    >
-                      {restoringId === version.id ? (
-                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <RotateCcw size={16} />
-                      )}
-                      {version.data ? '恢復此版本' : '無法恢復'}
-                    </button>
+                    {(() => {
+                      const isRestorable = version.action_type === 'save' && !!version.data;
+                      return (
+                        <button
+                          onClick={() => handleRestore(version)}
+                          disabled={restoringId !== null || !isRestorable}
+                          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            !isRestorable 
+                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed opacity-50'
+                              : restoringId === version.id
+                                ? 'bg-blue-50 text-blue-400'
+                                : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100'
+                          }`}
+                          title={!isRestorable ? "此紀錄不含資料快照，無法恢復" : "將手冊恢復至此版本"}
+                        >
+                          {restoringId === version.id ? (
+                            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <RotateCcw size={16} />
+                          )}
+                          {isRestorable ? '恢復此版本' : '無法恢復'}
+                        </button>
+                      );
+                    })()}
                   </div>
                   
                   {/* Subtle link indicator */}

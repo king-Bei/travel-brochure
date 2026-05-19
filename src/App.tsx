@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Globe } from 'lucide-react';
+import { Globe, Sparkles } from 'lucide-react';
 import { BrochureProvider, useBrochure } from './context/BrochureContext';
 import { EditorPanel } from './components/editor/EditorPanel';
 import { PreviewPanel } from './components/preview/PreviewPanel';
@@ -20,8 +20,35 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [hasConflict, setHasConflict] = useState(false);
   const isFirstMount = React.useRef(true);
+  const [syncToast, setSyncToast] = useState<{ show: boolean; editor: string }>({ show: false, editor: '' });
 
   const lastSavedDataRef = useRef<string>(JSON.stringify(data));
+
+  // 當雲端時間戳變動時 (無論是自己儲存還是協同同步過來)，立即同步更新 lastSavedDataRef
+  // 這是防範協作更新回彈觸發「自動儲存死循環」的關鍵防線！
+  useEffect(() => {
+    if (data.serverUpdatedAt) {
+      const dataToCompare = { ...data };
+      delete (dataToCompare as any).serverUpdatedAt;
+      lastSavedDataRef.current = JSON.stringify(dataToCompare);
+    }
+  }, [data.serverUpdatedAt]);
+
+  // 監聽全域實時同步事件，彈出精緻協同通知
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setSyncToast({ show: true, editor: detail.editor });
+      
+      const timer = setTimeout(() => {
+        setSyncToast(prev => ({ ...prev, show: false }));
+      }, 4000);
+      return () => clearTimeout(timer);
+    };
+
+    window.addEventListener('brochure-collaborative-sync', handleSync);
+    return () => window.removeEventListener('brochure-collaborative-sync', handleSync);
+  }, []);
 
   // 20秒防抖自動儲存
   useEffect(() => {
@@ -112,7 +139,7 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
   }, [currentId, currentUser]);
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col relative overflow-hidden">
       <Header
         currentId={currentId}
         onBackToDashboard={onBackToDashboard}
@@ -128,6 +155,24 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
           <PreviewPanel />
         </div>
       </div>
+
+      {/* 協同編輯實時同步 Toast */}
+      {syncToast.show && (
+        <div className="fixed bottom-6 right-6 z-[9999] bg-white/95 backdrop-blur-md border border-blue-100 shadow-2xl px-5 py-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center animate-spin" style={{ animationDuration: '4s' }}>
+            <Sparkles size={20} className="animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-xs font-black text-gray-800 tracking-wide flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+              實時協作同步成功
+            </h4>
+            <p className="text-[10px] text-gray-500 font-medium mt-1">
+              同仁 <span className="font-bold text-blue-600">{syncToast.editor}</span> 剛更新了此手冊，已為您無縫同步進度！
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -261,9 +306,11 @@ function App() {
     const handleActivity = () => {
       if (throttleTimer) return;
       
-      // 節流處理：每 30 秒才更新一次 localStorage，避免效能損耗
+      // 立即更新最後活動時間，保障即時寫入
+      auth.updateLastActivity();
+      
+      // 進入 30 秒冷卻期，避免頻繁寫入 localStorage 造成效能損耗
       throttleTimer = setTimeout(() => {
-        auth.updateLastActivity();
         throttleTimer = null;
       }, 30000);
     };
@@ -332,7 +379,11 @@ function App() {
   }
 
   if (view === 'login') {
-    return <Login onLoginSuccess={() => {
+    return <Login onLoginSuccess={async () => {
+      // 登入成功後即時獲取並更新當前使用者狀態，以便在線 Presence 能立即啟用
+      const user = await auth.getCurrentUser();
+      setCurrentUser(user);
+      
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('id')) {
          // 若登入前有夾帶 id，登入後重新整理讓他走 loadData 邏輯

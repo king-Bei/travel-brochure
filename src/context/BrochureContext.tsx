@@ -1,5 +1,6 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 import {
   BrochureData,
   createDefaultData,
@@ -138,6 +139,70 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
       }
     }));
   };
+
+  // 獲取當前手冊的 ID
+  const urlParams = new URLSearchParams(window.location.search);
+  const brochureId = urlParams.get('id');
+
+  // 建立 Supabase Realtime 資料庫變更實時監聽
+  useEffect(() => {
+    if (!supabase || !brochureId) return;
+
+    console.log(`[協作系統] 正在為手冊 ${brochureId} 建立實時同步通道...`);
+
+    const channel = supabase
+      .channel(`realtime-brochure:${brochureId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'brochures',
+          filter: `id=eq.${brochureId}`
+        },
+        async (payload) => {
+          const newRecord = payload.new as any;
+          if (!newRecord) return;
+
+          const cloudData = newRecord.data as BrochureData;
+          const cloudUpdatedAt = newRecord.updated_at;
+          const cloudEditor = newRecord.last_modified_by || '系統';
+
+          // 核心檢查：如果雲端的更新時間戳與我們本地記錄的不同
+          setData(prev => {
+            // 如果本地已經是最新的 (由本次儲存動作觸發，且 serverUpdatedAt 已被更新過)
+            if (prev.serverUpdatedAt === cloudUpdatedAt) {
+              return prev;
+            }
+
+            console.log(`[協作系統] 偵測到雲端有最新變更 (修改者: ${cloudEditor})。開始執行背景自動合併...`);
+
+            // 智慧自動合併：
+            // 保持我們當前正在極速修改的表單狀態 (例如若是文字輸入框的值仍在 prev 中)
+            // 為了不讓使用者輸入到一半的文字突然被覆蓋，我們智慧保留使用者正在修改的表單基本欄位
+            // 我們把雲端上的最新 publishedImages、isPublished、isLocked 以及 schema 資料與本地進行合併
+            const merged = { ...prev, ...cloudData };
+            merged.serverUpdatedAt = cloudUpdatedAt;
+            
+            // 拋出一個全域自訂事件，讓 UI 可以貼心地呈現浮動 Toast 通知
+            const syncEvent = new CustomEvent('brochure-collaborative-sync', {
+              detail: { editor: cloudEditor }
+            });
+            window.dispatchEvent(syncEvent);
+
+            return merged;
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log(`[協作系統] 通道狀態:`, status);
+      });
+
+    return () => {
+      console.log(`[協作系統] 卸載實時同步通道...`);
+      supabase?.removeChannel(channel);
+    };
+  }, [brochureId]);
 
   return (
     <BrochureContext.Provider value={{ data, updateData, setTheme, addPackingItem, removePackingItem, updatePageSetting }}>

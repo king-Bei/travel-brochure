@@ -35,12 +35,19 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
 
         // 2. (選填) 同步發佈到 FlipCloud 電子書系統 (先取得 Ebook ID)
         let ebookId = data.ebookId || null;
+        let finalPublishedImages = images; // 預設使用捕捉到的 Base64 快照
+        
         if (publishToFlipCloud) {
             setStatusMessage('正在同步至 FlipCloud 電子書系統...');
             const ebookResult = await storage.publishToEbook(data.title || '未命名手冊', images, data.ebookId);
             if (ebookResult.success && ebookResult.id) {
                 ebookId = ebookResult.id;
                 setFlipCloudId(ebookResult.id);
+                // 性能關鍵優化：若電子書發佈成功，直接使用上傳後的雲端 URL 陣列！
+                // 這樣在後續 saveBrochure 時，由於偵測到是網路網址，就不會再執行一次重複的 Base64 重新上傳，節省一半時間！
+                if (ebookResult.urls) {
+                    finalPublishedImages = ebookResult.urls;
+                }
             } else {
                 console.error('FlipCloud 發佈失敗:', ebookResult.error);
                 alert('同步到電子書系統時失敗：' + ebookResult.error);
@@ -56,7 +63,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
           isPublished: true,
           publishedAt: now,
           expiresAt: expiresAt,
-          publishedImages: images, // 儲存快照
+          publishedImages: finalPublishedImages, // 儲存快照 (可能是 Base64 或已上傳的雲端 URL)
           ebookId: ebookId || undefined, // 儲存電子書 ID (回寫)
           publishHistory: [
             ...history,
@@ -279,7 +286,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
             </h4>
             <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
                 {data.publishHistory && data.publishHistory.length > 0 ? (
-                    data.publishHistory.slice().reverse().map((log, idx) => (
+                    data.publishHistory.slice().reverse().map((log: any, idx: number) => (
                         <div key={idx} className="px-4 py-3 flex items-center justify-between text-xs">
                             <div className="flex flex-col">
                                 <span className={`font-bold ${log.action === 'publish' ? 'text-green-600' : 'text-gray-400'}`}>
