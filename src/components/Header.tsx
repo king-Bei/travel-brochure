@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Printer, Download, Upload, CloudUpload, ArrowLeft, CheckCircle2, Globe, History, Lock, Unlock } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Printer, Download, Upload, CloudUpload, ArrowLeft, CheckCircle2, Globe, History, Lock, Unlock, AlertTriangle } from 'lucide-react';
 import { useBrochure } from '../context/BrochureContext';
 import { PublishModal } from './PublishModal';
 import type { BrochureData } from '../types';
@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { storage } from '../lib/storage';
 import { StatusLogModal, LogEntry, LogLevel } from './StatusLogModal';
 import { VersionHistoryModal } from './VersionHistoryModal';
+import { captureBrochurePages } from '../lib/renderUtils';
 
 export function Header({
     currentId,
@@ -25,6 +26,134 @@ export function Header({
 
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
     const [isSavingCloud, setIsSavingCloud] = useState(false);
+
+    // 背景發佈狀態
+    const [isPublishing, setIsPublishing] = useState(false);
+    const [publishProgress, setPublishProgress] = useState({ current: 0, total: 0 });
+    const [publishStatusText, setPublishStatusText] = useState('');
+    const [publishFlipCloudId, setPublishFlipCloudId] = useState<string | null>(data.ebookId || null);
+    const [publishToFlipCloud, setPublishToFlipCloud] = useState(true);
+    const [publishExpiresAt, setPublishExpiresAt] = useState(data.expiresAt || '');
+    const [publishToast, setPublishToast] = useState<{ show: boolean; type: 'success' | 'error'; message: string } | null>(null);
+
+    // 當手冊資料的 expiresAt 變動時，同步狀態
+    useEffect(() => {
+        if (data.expiresAt) {
+            setPublishExpiresAt(data.expiresAt);
+        }
+    }, [data.expiresAt]);
+
+    const showPublishToast = (type: 'success' | 'error', message: string) => {
+        setPublishToast({ show: true, type, message });
+        setTimeout(() => {
+            setPublishToast(null);
+        }, 4000);
+    };
+
+    const handlePublish = async () => {
+        if (isPublishing) return;
+        setIsPublishing(true);
+        setPublishStatusText('準備中...');
+        setPublishProgress({ current: 0, total: 0 });
+
+        try {
+            // 1. 執行圖片擷取
+            setPublishStatusText('正在捕捉分頁 PNG 快照以確保排版正確...');
+            const images = await captureBrochurePages('#capture-pages-root', (current, total) => {
+                setPublishProgress({ current, total });
+                setPublishStatusText(`正在處理第 ${current} / ${total} 頁...`);
+            });
+
+            // 2. 同步發佈到 FlipCloud
+            let ebookId = data.ebookId || null;
+            let finalPublishedImages = images;
+
+            if (publishToFlipCloud) {
+                setPublishStatusText('正在同步至 FlipCloud 電子書系統...');
+                const ebookResult = await storage.publishToEbook(data.title || '未命名手冊', images, data.ebookId);
+                if (ebookResult.success && ebookResult.id) {
+                    ebookId = ebookResult.id;
+                    setPublishFlipCloudId(ebookResult.id);
+                    if (ebookResult.urls) {
+                        finalPublishedImages = ebookResult.urls;
+                    }
+                } else {
+                    console.error('FlipCloud 發佈失敗:', ebookResult.error);
+                    throw new Error('同步到電子書系統時失敗：' + ebookResult.error);
+                }
+            }
+
+            // 3. 更新手冊資料
+            const now = new Date().toISOString();
+            const history = data.publishHistory || [];
+            const finalData = {
+                ...data,
+                isPublished: true,
+                publishedAt: now,
+                expiresAt: publishExpiresAt,
+                publishedImages: finalPublishedImages,
+                ebookId: ebookId || undefined,
+                publishHistory: [
+                    ...history,
+                    { timestamp: now, action: 'publish' as const }
+                ],
+                version: (data.version || 0) + 1
+            };
+
+            // 4. 儲存到雲端
+            setPublishStatusText('正在同步至手冊雲端系統...');
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = currentId || urlParams.get('id');
+            if (id) {
+                const result = await storage.saveBrochure(id, finalData);
+                if (!result.success && result.error === 'CONFLICT') {
+                    throw new Error('【發佈衝突】此手冊已被其他使用者修改並儲存。請重新整理頁面以取得最新版本。');
+                }
+            }
+
+            updateData(finalData);
+            setPublishStatusText('發佈成功！');
+            showPublishToast('success', '手冊發佈成功！電子書已同步更新。');
+        } catch (error: any) {
+            console.error('發佈失敗:', error);
+            setPublishStatusText('發佈失敗');
+            showPublishToast('error', error.message || '發佈過程發生錯誤');
+        } finally {
+            setIsPublishing(false);
+        }
+    };
+
+    const handleUnpublish = async () => {
+        if (isPublishing) return;
+        setIsPublishing(true);
+        setPublishStatusText('下架中...');
+        try {
+            const now = new Date().toISOString();
+            const history = data.publishHistory || [];
+            const finalData = {
+                ...data,
+                isPublished: false,
+                publishHistory: [
+                    ...history,
+                    { timestamp: now, action: 'unpublish' as const }
+                ]
+            };
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = currentId || urlParams.get('id');
+            if (id) {
+                await storage.saveBrochure(id, finalData, false);
+            }
+            updateData(finalData);
+            setPublishStatusText('下架成功！');
+            showPublishToast('success', '手冊已成功下架。');
+        } catch (error: any) {
+            console.error('下架失敗:', error);
+            showPublishToast('error', '下架失敗：' + error.message);
+        } finally {
+            setIsPublishing(false);
+        }
+    };
 
     // Status Log State
     const [isLogOpen, setIsLogOpen] = useState(false);
@@ -374,7 +503,17 @@ export function Header({
             />
             <PublishModal 
                 isOpen={isPublishModalOpen} 
-                onClose={() => setIsPublishModalOpen(false)} 
+                onClose={() => setIsPublishModalOpen(false)}
+                isProcessing={isPublishing}
+                renderProgress={publishProgress}
+                statusMessage={publishStatusText}
+                flipCloudId={publishFlipCloudId}
+                publishToFlipCloud={publishToFlipCloud}
+                setPublishToFlipCloud={setPublishToFlipCloud}
+                expiresAt={publishExpiresAt}
+                setExpiresAt={setPublishExpiresAt}
+                onPublish={handlePublish}
+                onUnpublish={handleUnpublish}
             />
             <VersionHistoryModal
                 isOpen={isHistoryOpen}
@@ -382,6 +521,66 @@ export function Header({
                 brochureId={currentId || ''}
                 onRestore={(restoredData) => updateData(restoredData)}
             />
+
+            {/* 背景發佈懸浮進度卡片 (玻璃擬態) */}
+            {isPublishing && !isPublishModalOpen && (
+                <div className="fixed bottom-6 right-6 z-[9999] w-80 bg-white/80 backdrop-blur-xl border border-gray-100/50 shadow-2xl rounded-2xl p-5 flex flex-col gap-3.5 animate-in slide-in-from-bottom-5 fade-in duration-300">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center animate-spin" style={{ animationDuration: '4s' }}>
+                            <Globe size={20} className="animate-pulse" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-black text-gray-800 tracking-wide flex items-center gap-1.5">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
+                                背景發佈中...
+                            </h4>
+                            <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">
+                                {publishStatusText}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {publishProgress.total > 0 && (
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400">
+                                <span>進度</span>
+                                <span>{publishProgress.current} / {publishProgress.total} 頁</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden p-0.5 border border-gray-50/50">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out shadow-sm"
+                                    style={{ width: `${(publishProgress.current / publishProgress.total) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    
+                    <p className="text-[9px] text-amber-600 font-bold bg-amber-50/60 px-2.5 py-1.5 rounded-lg border border-amber-100/40 text-center animate-pulse">
+                        ⚠️ 發佈期間請勿關閉或重新整理此網頁
+                    </p>
+                </div>
+            )}
+
+            {/* 發佈狀態 Toast 通知 */}
+            {publishToast && publishToast.show && (
+                <div className={`fixed bottom-6 right-6 z-[9999] bg-white/95 backdrop-blur-md border shadow-2xl px-5 py-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5 fade-in duration-300 ${
+                    publishToast.type === 'success' ? 'border-green-100 shadow-green-100/20' : 'border-red-100 shadow-red-100/20'
+                }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        publishToast.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                    }`}>
+                        {publishToast.type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
+                    </div>
+                    <div>
+                        <h4 className="text-xs font-black text-gray-800 tracking-wide">
+                            {publishToast.type === 'success' ? '處理成功' : '處理失敗'}
+                        </h4>
+                        <p className="text-[10px] text-gray-500 font-medium mt-1">
+                            {publishToast.message}
+                        </p>
+                    </div>
+                </div>
+            )}
         </header>
     );
 }

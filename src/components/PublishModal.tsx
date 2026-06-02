@@ -1,121 +1,39 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Globe, Calendar, History, X, CheckCircle2, AlertTriangle, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { useBrochure } from '../context/BrochureContext';
-import { captureBrochurePages } from '../lib/renderUtils';
-import { storage } from '../lib/storage';
 
 interface PublishModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isProcessing: boolean;
+  renderProgress: { current: number; total: number };
+  statusMessage: string;
+  flipCloudId: string | null;
+  publishToFlipCloud: boolean;
+  setPublishToFlipCloud: (val: boolean) => void;
+  expiresAt: string;
+  setExpiresAt: (val: string) => void;
+  onPublish: () => Promise<void>;
+  onUnpublish: () => Promise<void>;
 }
 
-export function PublishModal({ isOpen, onClose }: PublishModalProps) {
-  const { data, updateData } = useBrochure();
-  const [expiresAt, setExpiresAt] = useState(data.expiresAt || '');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [renderProgress, setRenderProgress] = useState({ current: 0, total: 0 });
-  const [statusMessage, setStatusMessage] = useState('');
-  const [publishToFlipCloud, setPublishToFlipCloud] = useState(true);
-  const [flipCloudId, setFlipCloudId] = useState<string | null>(null);
+export function PublishModal({
+  isOpen,
+  onClose,
+  isProcessing,
+  renderProgress,
+  statusMessage,
+  flipCloudId,
+  publishToFlipCloud,
+  setPublishToFlipCloud,
+  expiresAt,
+  setExpiresAt,
+  onPublish,
+  onUnpublish
+}: PublishModalProps) {
+  const { data } = useBrochure();
 
   if (!isOpen) return null;
-
-  const handlePublish = async () => {
-    setIsProcessing(true);
-    setStatusMessage('準備中...');
-    setFlipCloudId(null);
-
-    try {
-        // 1. 執行圖片擷取以防止跑版 (PNG 高畫質快照)
-        setStatusMessage('正在捕捉分頁 PNG 快照以確保排版正確...');
-        const images = await captureBrochurePages('#capture-pages-root', (current, total) => {
-            setRenderProgress({ current, total });
-            setStatusMessage(`正在處理第 ${current} / ${total} 頁...`);
-        });
-
-        // 2. (選填) 同步發佈到 FlipCloud 電子書系統 (先取得 Ebook ID)
-        let ebookId = data.ebookId || null;
-        let finalPublishedImages = images; // 預設使用捕捉到的 Base64 快照
-        
-        if (publishToFlipCloud) {
-            setStatusMessage('正在同步至 FlipCloud 電子書系統...');
-            const ebookResult = await storage.publishToEbook(data.title || '未命名手冊', images, data.ebookId);
-            if (ebookResult.success && ebookResult.id) {
-                ebookId = ebookResult.id;
-                setFlipCloudId(ebookResult.id);
-                // 性能關鍵優化：若電子書發佈成功，直接使用上傳後的雲端 URL 陣列！
-                // 這樣在後續 saveBrochure 時，由於偵測到是網路網址，就不會再執行一次重複的 Base64 重新上傳，節省一半時間！
-                if (ebookResult.urls) {
-                    finalPublishedImages = ebookResult.urls;
-                }
-            } else {
-                console.error('FlipCloud 發佈失敗:', ebookResult.error);
-                alert('同步到電子書系統時失敗：' + ebookResult.error);
-            }
-        }
-
-        // 3. 更新資料並發佈
-        const now = new Date().toISOString();
-        const history = data.publishHistory || [];
-        
-        const finalData = {
-          ...data,
-          isPublished: true,
-          publishedAt: now,
-          expiresAt: expiresAt,
-          publishedImages: finalPublishedImages, // 儲存快照 (可能是 Base64 或已上傳的雲端 URL)
-          ebookId: ebookId || undefined, // 儲存電子書 ID (回寫)
-          publishHistory: [
-            ...history,
-            { timestamp: now, action: 'publish' as const }
-          ],
-          version: (data.version || 0) + 1
-        };
-
-        // 4. 儲存到手冊系統雲端
-        setStatusMessage('正在同步至手冊雲端系統...');
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        if (id) {
-            const result = await storage.saveBrochure(id, finalData);
-            if (!result.success && result.error === 'CONFLICT') {
-                alert('【發佈衝突】此手冊已被其他使用者修改並儲存。\n\n發佈已取消。請重新整理頁面以取得最新版本後再試。');
-                return;
-            }
-        }
-
-        updateData(finalData);
-        setStatusMessage('發佈成功！');
-    } catch (error: any) {
-        console.error('發佈失敗:', error);
-        alert('發佈過程發生錯誤: ' + error.message);
-    } finally {
-        setIsProcessing(false);
-        setRenderProgress({ current: 0, total: 0 });
-    }
-  };
-
-  const handleUnpublish = async () => {
-    const now = new Date().toISOString();
-    const history = data.publishHistory || [];
-    
-    const finalData = {
-      ...data,
-      isPublished: false,
-      publishHistory: [
-        ...history,
-        { timestamp: now, action: 'unpublish' as const }
-      ]
-    };
-
-    updateData(finalData);
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    if (id) {
-        await storage.saveBrochure(id, finalData, false); // 手動儲存，產生版本紀錄
-    }
-  };
 
   const ebookReaderBaseUrl = import.meta.env.VITE_EBOOK_READER_URL || `${window.location.origin}/ebook`;
   const ebookUrl = data.ebookId 
@@ -310,13 +228,14 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
           {data.isPublished ? (
               <>
                 <button
-                    onClick={handleUnpublish}
-                    className="flex-1 px-4 py-3 rounded-xl font-bold text-sm bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                    onClick={onUnpublish}
+                    disabled={isProcessing}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-sm bg-white text-red-500 border border-red-100 hover:bg-red-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                     <AlertTriangle size={16} /> 停止發佈 (下架)
                 </button>
                 <button
-                    onClick={handlePublish}
+                    onClick={onPublish}
                     disabled={isProcessing}
                     className="flex-[1.5] px-4 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
                 >
@@ -332,7 +251,7 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
               </>
           ) : (
               <button
-                onClick={handlePublish}
+                onClick={onPublish}
                 disabled={isProcessing}
                 className="w-full px-4 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 relative overflow-hidden"
               >
@@ -351,3 +270,4 @@ export function PublishModal({ isOpen, onClose }: PublishModalProps) {
     </div>
   );
 }
+

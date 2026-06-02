@@ -28,22 +28,21 @@ export async function captureBrochurePages(
   (container as HTMLElement).style.cssText += '; display: block !important; position: fixed !important; left: -9999px !important; top: 0 !important; visibility: visible !important;';
 
   try {
-    const batchSize = 2; // 分批並行處理，提升速度但避免過度佔用資源
+    const batchSize = 4; // 提高並行批次以充分利用現代裝置多核心效能
     for (let i = 0; i < total; i += batchSize) {
         const batch = pages.slice(i, i + batchSize);
         const results = await Promise.all(batch.map(async (page, index) => {
             const actualIdx = i + index;
-            // 由於併發，進度稍微估算
-            if (onProgress) onProgress(actualIdx + 1, total);
+            if (onProgress) onProgress(Math.min(actualIdx + 1, total), total);
             
-            // 改用 toWebp 並設定品質 0.85 (高度壓縮且極佳清晰度)，並保留 toPng 作為相容性備份
+            // 改用 toWebp 並設定品質 0.82，並保留 toPng 作為相容性備份
             const renderFn = h2i.toWebp || h2i.toPng;
             return renderFn(page as HTMLElement, {
-                quality: 0.85,
-                pixelRatio: 1.5,
+                quality: 0.82,
+                pixelRatio: 1.2, // 調整至 1.2 即可在手機 Retina 螢幕上維持清晰且大幅減少 CPU 渲染開銷
                 backgroundColor: '#ffffff',
                 skipAnimations: true,
-                cacheBust: true,
+                cacheBust: false, // 停用以允許瀏覽器使用快取圖片，避免每頁擷取時都向網路重複發送圖片請求
             });
         }));
         
