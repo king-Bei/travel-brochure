@@ -179,8 +179,10 @@ export function getItineraryPageCount(itineraries: ItineraryDay[]): number {
  */
 export function getSectionPageCount(sectionId: SectionId, data: BrochureData): number {
     switch (sectionId) {
-        case 'flight':
-            return 1;
+        case 'flight': {
+            const flightsCount = Array.isArray(data.flights) ? data.flights.length : 0;
+            return flightsCount > 3 ? 2 : 1;
+        }
         case 'attraction':
             return getAttractionPageCount(data.attractions || []);
         case 'hotel':

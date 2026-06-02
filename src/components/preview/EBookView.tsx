@@ -116,11 +116,34 @@ export function EBookView() {
       let component: React.ReactNode = null;
       let hasContent = false;
 
+      if (id === 'flight') {
+        hasContent = ((data.flights?.length || 0) > 0) || !!(data.meetingPoint || data.meetingTime || data.tourLeader);
+        if (hasContent) {
+          const flightsCount = Array.isArray(data.flights) ? data.flights.length : 0;
+          const needsSplit = flightsCount > 3;
+          if (needsSplit) {
+            p.push({
+              id: 'flight-info',
+              label: '航班資訊',
+              component: <FlightPage subPage="flights" />
+            });
+            p.push({
+              id: 'flight-meeting',
+              label: '集合資訊',
+              component: <FlightPage subPage="meeting" />
+            });
+          } else {
+            p.push({
+              id: 'flight',
+              label: '航班資訊',
+              component: <FlightPage subPage="all" />
+            });
+          }
+        }
+        return;
+      }
+
       switch (id) {
-        case 'flight': 
-          hasContent = ((data.flights?.length || 0) > 0) || !!(data.meetingPoint || data.meetingTime || data.tourLeader);
-          if (hasContent) component = <FlightPage />; 
-          break;
         case 'attraction': 
           hasContent = ((data.attractions?.length || 0) > 0);
           if (hasContent) component = <AttractionPage />; 

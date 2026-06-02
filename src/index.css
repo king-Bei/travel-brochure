@@ -149,16 +149,14 @@ body {
     position: relative !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    /* 加入畫質優化 */
-    image-rendering: -webkit-optimize-contrast !important;
-    image-rendering: crisp-edges !important;
-    text-rendering: optimizeLegibility !important;
+    /* 確保文字以高品質向量渲染，避免容器層級的 image-rendering 導致整頁點陣化 */
+    text-rendering: geometricPrecision !important;
   }
 
-  /* 強化文字平滑度與銳利度 */
+  /* 強化列印文字的平滑度與銳利度，避免螢幕用的抗鋸齒造成列印模糊 */
   * {
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
     text-shadow: none !important;
     transition: none !important;
     animation: none !important;

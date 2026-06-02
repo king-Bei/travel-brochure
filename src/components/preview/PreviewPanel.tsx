@@ -122,32 +122,109 @@ export function PreviewPanel() {
 
   // 統一計算頁面列表
   // 1=Cover, 2=TOC, 3...=visibleSections, ...=Notes, last=BackCover
-  const pages = [
-    { id: 'cover', title: 'Cover Page', component: (side: 'left'|'right') => <PageSideContext.Provider value={side}><CoverPage /></PageSideContext.Provider> },
-    { id: 'toc', title: 'Table of Contents', component: (side: 'left'|'right') => <PageSideContext.Provider value={side}><TOCPage /></PageSideContext.Provider> },
-    ...visibleSections.map((id, index) => ({
-      id,
-      title: `${id.charAt(0).toUpperCase() + id.slice(1)} Page`,
-      component: (side: 'left'|'right') => renderSection(id as SectionId, index + 2) // Index + 2 因為前面有 Cover(0) 跟 TOC(1)
-    })),
-    ...Array.from({ length: data.notesCount || 0 }).map((_, i) => {
-      const globalIndex = 2 + visibleSections.length + i;
-      return {
+  const pages = React.useMemo(() => {
+    const list: { id: string; title: string; component: (side: 'left' | 'right') => React.ReactNode }[] = [];
+
+    // 1. Cover Page
+    list.push({
+      id: 'cover',
+      title: 'Cover Page',
+      component: (side) => (
+        <PageSideContext.Provider value={side}>
+          <CoverPage />
+        </PageSideContext.Provider>
+      ),
+    });
+
+    // 2. Table of Contents
+    list.push({
+      id: 'toc',
+      title: 'Table of Contents',
+      component: (side) => (
+        <PageSideContext.Provider value={side}>
+          <TOCPage />
+        </PageSideContext.Provider>
+      ),
+    });
+
+    // 3. Sections
+    let sectionPageIndex = 2; // Cover(0), TOC(1)
+    visibleSections.forEach((id) => {
+      if (id === 'flight') {
+        const flightsCount = Array.isArray(data.flights) ? data.flights.length : 0;
+        const needsSplit = flightsCount > 3;
+
+        if (needsSplit) {
+          list.push({
+            id: 'flight-info',
+            title: 'Flight Info Page',
+            component: (side) => (
+              <PageSideContext.Provider value={side}>
+                <FlightPage subPage="flights" />
+              </PageSideContext.Provider>
+            ),
+          });
+          sectionPageIndex++;
+
+          list.push({
+            id: 'flight-meeting',
+            title: 'Flight Meeting Page',
+            component: (side) => (
+              <PageSideContext.Provider value={side}>
+                <FlightPage subPage="meeting" />
+              </PageSideContext.Provider>
+            ),
+          });
+          sectionPageIndex++;
+        } else {
+          list.push({
+            id: 'flight',
+            title: 'Flight Page',
+            component: (side) => (
+              <PageSideContext.Provider value={side}>
+                <FlightPage subPage="all" />
+              </PageSideContext.Provider>
+            ),
+          });
+          sectionPageIndex++;
+        }
+      } else {
+        const currentIdx = sectionPageIndex;
+        list.push({
+          id,
+          title: `${id.charAt(0).toUpperCase() + id.slice(1)} Page`,
+          component: (side) => renderSection(id as SectionId, currentIdx),
+        });
+        sectionPageIndex++;
+      }
+    });
+
+    // 4. Notes Pages
+    Array.from({ length: data.notesCount || 0 }).forEach((_, i) => {
+      list.push({
         id: `note-${i}`,
         title: `Note Page ${i + 1}`,
-        component: (side: 'left'|'right') => (
+        component: (side) => (
           <PageSideContext.Provider value={side}>
             <NotesPage totalNotes={data.notesCount} />
           </PageSideContext.Provider>
-        )
-      };
-    }),
-    { 
-      id: 'back-cover', 
-      title: 'Back Cover Page', 
-      component: (side: 'left'|'right') => <PageSideContext.Provider value={side}><BackCoverPage /></PageSideContext.Provider> 
-    }
-  ];
+        ),
+      });
+    });
+
+    // 5. Back Cover Page
+    list.push({
+      id: 'back-cover',
+      title: 'Back Cover Page',
+      component: (side) => (
+        <PageSideContext.Provider value={side}>
+          <BackCoverPage />
+        </PageSideContext.Provider>
+      ),
+    });
+
+    return list;
+  }, [visibleSections, data.flights, data.notesCount, data.theme, data.fontFamily]);
 
   return (
     <div className="relative h-full overflow-hidden bg-[#ccd5e0]">

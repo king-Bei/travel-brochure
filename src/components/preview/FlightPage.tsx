@@ -4,7 +4,7 @@ import { Plane, MapPin, Users, Clock, Phone, AlertCircle } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import { FlightInfo } from '../../types';
 
-export function FlightPage() {
+export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 'meeting' }) {
   const { data } = useBrochure();
 
   // 1. Data Migration: 同步編輯器的邏輯，確保預覽也能顯示舊格式資料
@@ -109,82 +109,87 @@ export function FlightPage() {
     );
   };
 
-  const meetingSection = (data.meetingPoint || data.meetingTime || data.tourLeader || data.agencyName || data.meetingMap) ? (
+  const meetingSectionContent = (
+    <div className="space-y-2">
+      {/* 集合資訊卡片 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
+            <MapPin size={10} /> 集合地點
+          </p>
+          <p className="dynamic-text font-bold text-gray-800 leading-tight">{data.meetingPoint || '請洽旅行社確認'}</p>
+        </div>
+        <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
+            <Clock size={10} /> 集合時間
+          </p>
+          <p className="dynamic-text text-lg font-black leading-none" style={{ color: data.theme.primary }}>{data.meetingTime || '--:--'}</p>
+        </div>
+      </div>
+
+      {/* 旅行社與緊急聯絡資訊 */}
+      <div className="bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-12 h-12 -mr-3 -mt-3 opacity-5" style={{ color: data.theme.primary }}>
+          <Phone size={48} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 sm:gap-y-1 relative z-10">
+          {/* 第一列：領隊 (單獨一列) */}
+          <div className="col-span-1 sm:col-span-2 pb-1 border-b border-gray-50 mb-0.5 grid grid-cols-2 gap-x-4">
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">領隊</p>
+              <p className="dynamic-text font-black text-gray-900 leading-none">{data.tourLeader || '敬請期待'}</p>
+            </div>
+            {data.tourLeaderPhone && (
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">領隊手機號碼</p>
+                <p className="dynamic-text font-black tracking-wider leading-none" style={{ color: data.theme.primary }}>
+                  {data.tourLeaderPhone}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 第二列：旅行社 與 緊急聯繫人 */}
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">緊急聯繫人</p>
+            <p className="dynamic-text text-xs font-black text-gray-900 leading-none">
+              {data.emergencyContactName || '值班人員'}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-start justify-end space-y-0.5">
+            <span className="text-[11px] font-bold text-gray-500 leading-none tracking-tight">
+              {data.agencyPhone || '02-8789-6699'}
+            </span>
+            <p className="dynamic-text font-black tracking-wider text-gray-900 leading-none">
+              {data.agencyMobile || data.emergencyPhone || '0911-111-111'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 地圖區域 */}
+      {data.meetingMap && (
+        <div className="bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
+          <div className="bg-white rounded-lg overflow-hidden shadow-inner">
+            <img src={data.meetingMap} alt="Airport Meeting Map" className="w-full h-auto dynamic-img-h-airport-map object-contain" />
+          </div>
+          <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">機場集合地圖</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const hasMeetingInfo = !!(data.meetingPoint || data.meetingTime || data.tourLeader || data.agencyName || data.meetingMap);
+
+  const meetingSection = hasMeetingInfo ? (
     <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
       <div className="flex items-center gap-2 mb-1.5">
         <Users size={14} style={{ color: data.theme.primary }} />
         <h3 className="dynamic-text font-bold text-base tracking-tight" style={{ color: data.theme.primary }}>集合資訊 & 聯絡方式</h3>
       </div>
-
-      <div className="space-y-1">
-        {/* 集合資訊卡片 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
-              <MapPin size={10} /> 集合地點
-            </p>
-            <p className="dynamic-text font-bold text-gray-800 leading-tight">{data.meetingPoint || '請洽旅行社確認'}</p>
-          </div>
-          <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
-              <Clock size={10} /> 集合時間
-            </p>
-            <p className="dynamic-text text-lg font-black leading-none" style={{ color: data.theme.primary }}>{data.meetingTime || '--:--'}</p>
-          </div>
-        </div>
-
-        {/* 旅行社與緊急聯絡資訊 */}
-        <div className="bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-12 h-12 -mr-3 -mt-3 opacity-5" style={{ color: data.theme.primary }}>
-            <Phone size={48} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 sm:gap-y-1 relative z-10">
-            {/* 第一列：領隊 (單獨一列) */}
-            <div className="col-span-1 sm:col-span-2 pb-1 border-b border-gray-50 mb-0.5 grid grid-cols-2 gap-x-4">
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">領隊</p>
-                <p className="dynamic-text font-black text-gray-900 leading-none">{data.tourLeader || '敬請期待'}</p>
-              </div>
-              {data.tourLeaderPhone && (
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">領隊手機號碼</p>
-                  <p className="dynamic-text font-black tracking-wider leading-none" style={{ color: data.theme.primary }}>
-                    {data.tourLeaderPhone}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* 第二列：旅行社 與 緊急聯繫人 */}
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">緊急聯繫人</p>
-              <p className="dynamic-text text-xs font-black text-gray-900 leading-none">
-                {data.emergencyContactName || '值班人員'}
-              </p>
-            </div>
-
-            <div className="flex flex-col items-start justify-end space-y-0.5">
-              <span className="text-[11px] font-bold text-gray-500 leading-none tracking-tight">
-                {data.agencyPhone || '02-8789-6699'}
-              </span>
-              <p className="dynamic-text font-black tracking-wider text-gray-900 leading-none">
-                {data.agencyMobile || data.emergencyPhone || '0911-111-111'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 地圖區域 */}
-        {data.meetingMap && (
-          <div className="bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
-            <div className="bg-white rounded-lg overflow-hidden shadow-inner">
-              <img src={data.meetingMap} alt="Airport Meeting Map" className="w-full h-auto dynamic-img-h-airport-map object-contain" />
-            </div>
-            <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">機場集合地圖</p>
-          </div>
-        )}
-      </div>
+      {meetingSectionContent}
     </div>
   ) : null;
 
@@ -205,6 +210,18 @@ export function FlightPage() {
     return groups.filter(g => g.segments.length > 0);
   }, [flights, data.theme.primary]);
 
+  // 針對 subPage === 'meeting'：獨立呈現集合資訊
+  if (subPage === 'meeting') {
+    return (
+      <PageWrapper sectionId="flight" title="集合資訊" icon={<Users size={18} />}>
+        <div className="flex-grow flex flex-col h-full justify-between">
+          {meetingSectionContent}
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // 針對無航班資料的情形
   if (flights.length === 0) {
     return (
       <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={24} />}>
@@ -212,12 +229,38 @@ export function FlightPage() {
           <div className="flex-grow py-20 text-center opacity-20 italic font-medium">
             暫無航班資訊，請洽旅行社確認。
           </div>
-          {meetingSection}
+          {subPage === 'all' && meetingSection}
         </div>
       </PageWrapper>
     );
   }
 
+  // 針對 subPage === 'flights'：僅呈現航班列表
+  if (subPage === 'flights') {
+    return (
+      <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={18} />}>
+        <div className="flex-grow flex flex-col h-full">
+          <div className="space-y-4">
+            {groupedFlights.map((group, gIdx) => (
+              <div key={gIdx} className="space-y-2">
+                <div className="flex items-center gap-2 mb-1 px-1">
+                  <div className="w-1 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                  <h4 className="text-[11px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
+                </div>
+                <div className="space-y-2">
+                  {group.segments.map((flight, fIdx) => (
+                    <FlightCard key={fIdx} flight={flight} index={flights.indexOf(flight)} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // 預設 (subPage === 'all')：在單頁同時呈現航班與集合資訊
   return (
     <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={18} />}>
       <div className="flex-grow flex flex-col h-full">

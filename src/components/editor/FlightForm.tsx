@@ -21,7 +21,7 @@ export function FlightForm() {
   };
 
   const addSegment = () => {
-    if (flights.length >= 4) return;
+    if (flights.length >= 8) return;
     const newSegment: FlightInfo = {
       airline: '',
       airlineLogo: '',
@@ -83,7 +83,7 @@ export function FlightForm() {
         </h3>
         <button
           onClick={addSegment}
-          disabled={flights.length >= 4}
+          disabled={flights.length >= 8}
           className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Plus size={16} />
