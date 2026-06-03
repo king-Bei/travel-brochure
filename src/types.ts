@@ -151,7 +151,7 @@ export const defaultSectionOrder: SectionId[] = [
   'customPage'
 ];
 
-export type BrochureCategory = '出團' | '報價';
+export type BrochureCategory = '出團' | '報價' | '報價行程';
 export type BrochureStatus = '待製作' | '初稿完成' | '待調整' | '內部確認' | '待客戶確認' | '客戶已確認' | '已出團';
 
 export interface BrochureMeta {
@@ -164,6 +164,7 @@ export interface BrochureMeta {
   updatedAt: string;
   lastModifiedBy: string;
   isDeleted: boolean;
+  publishStartAt?: string;
   expiresAt?: string;
   shortId?: string;
   ebookId?: string; // 新增：電子書系統的書籍 ID
@@ -171,6 +172,8 @@ export interface BrochureMeta {
   status?: BrochureStatus;
   departureDate?: string;
   isClosed?: boolean;
+  passwordHash?: string;
+  source?: 'editor' | 'pdf'; // 新增：來源分類 (手冊編輯器 or PDF上傳)
 }
 
 export interface BrochureData {
@@ -227,6 +230,7 @@ export interface BrochureData {
   groupNumber?: string; // 新增：內部註記團號
   isPublished?: boolean; // 新增：是否已發佈線上手冊
   publishedAt?: string; // 新增：發佈時間
+  publishStartAt?: string; // 新增：預定上架時間
   expiresAt?: string; // 新增：下架時間
   publishHistory?: { timestamp: string; action: 'publish' | 'unpublish' | 'status_change'; user?: string; note?: string }[]; // 新增：發佈紀錄
   version?: number; // 新增：版本號
@@ -238,6 +242,8 @@ export interface BrochureData {
   status?: BrochureStatus;     // 新增：製作狀態
   departureDate?: string;      // 新增：出發日期 (用於管理與自動轉狀態)
   isClosed?: boolean;           // 新增：是否已結案 (平常隱藏)
+  passwordHash?: string;        // 新增：閱讀密碼雜湊值
+  source?: 'editor' | 'pdf';    // 新增：來源分類 (手冊編輯器 or PDF上傳)
 }
 
 export interface User {
@@ -448,9 +454,11 @@ export function createDefaultData(): BrochureData {
     groupNumber: '', // 預設空白
     isPublished: false, // 預設未發佈
     publishedImages: [], // 預設無快照
-    category: '報價',     // 預設分類
+    category: '報價行程',     // 預設分類
     status: '待製作',      // 預設進度
     isClosed: false,       // 預設未結案
+    passwordHash: '',      // 預設密碼雜湊為空
+    source: 'editor',      // 預設來源為編輯器發佈
   };
 }
 

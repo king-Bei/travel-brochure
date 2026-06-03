@@ -14,4 +14,16 @@ export default defineConfig({
     port: 8085,
     host: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-pdf': ['pdfjs-dist'],
+          'vendor-charts': ['recharts'],
+        },
+      },
+    },
+  },
 })

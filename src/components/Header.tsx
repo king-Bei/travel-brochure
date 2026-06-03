@@ -33,15 +33,15 @@ export function Header({
     const [publishStatusText, setPublishStatusText] = useState('');
     const [publishFlipCloudId, setPublishFlipCloudId] = useState<string | null>(data.ebookId || null);
     const [publishToFlipCloud, setPublishToFlipCloud] = useState(true);
+    const [publishStartAt, setPublishStartAt] = useState(data.publishStartAt || '');
     const [publishExpiresAt, setPublishExpiresAt] = useState(data.expiresAt || '');
     const [publishToast, setPublishToast] = useState<{ show: boolean; type: 'success' | 'error'; message: string } | null>(null);
 
-    // 當手冊資料的 expiresAt 變動時，同步狀態
+    // 當手冊資料的上下架日期變動時，同步狀態
     useEffect(() => {
-        if (data.expiresAt) {
-            setPublishExpiresAt(data.expiresAt);
-        }
-    }, [data.expiresAt]);
+        setPublishStartAt(data.publishStartAt || '');
+        setPublishExpiresAt(data.expiresAt || '');
+    }, [data.publishStartAt, data.expiresAt]);
 
     const showPublishToast = (type: 'success' | 'error', message: string) => {
         setPublishToast({ show: true, type, message });
@@ -69,7 +69,7 @@ export function Header({
             let finalPublishedImages = images;
 
             if (publishToFlipCloud) {
-                setPublishStatusText('正在同步至 FlipCloud 電子書系統...');
+                setPublishStatusText('正在同步至 電子書系統...');
                 const ebookResult = await storage.publishToEbook(data.title || '未命名手冊', images, data.ebookId);
                 if (ebookResult.success && ebookResult.id) {
                     ebookId = ebookResult.id;
@@ -78,7 +78,7 @@ export function Header({
                         finalPublishedImages = ebookResult.urls;
                     }
                 } else {
-                    console.error('FlipCloud 發佈失敗:', ebookResult.error);
+                    console.error('發佈失敗:', ebookResult.error);
                     throw new Error('同步到電子書系統時失敗：' + ebookResult.error);
                 }
             }
@@ -90,6 +90,7 @@ export function Header({
                 ...data,
                 isPublished: true,
                 publishedAt: now,
+                publishStartAt,
                 expiresAt: publishExpiresAt,
                 publishedImages: finalPublishedImages,
                 ebookId: ebookId || undefined,
@@ -185,7 +186,7 @@ export function Header({
 
         const urlParams = new URLSearchParams(window.location.search);
         const existingId = currentId || urlParams.get('id');
-        
+
         if (!existingId) {
             alert('手冊 ID 遺失，無法進行雲端同步');
             return;
@@ -202,11 +203,11 @@ export function Header({
                     updateData({ serverUpdatedAt: data.serverUpdatedAt });
                 }
             } else if (result.error === 'CONFLICT') {
-                setLogs([{ 
-                    id: 'err-conflict', 
-                    message: '【儲存衝突】此手冊已被其他使用者修改並儲存。請重新整理頁面以取得最新版本，或複製目前變更後重新整理。', 
-                    level: 'error', 
-                    timestamp: new Date() 
+                setLogs([{
+                    id: 'err-conflict',
+                    message: '【儲存衝突】此手冊已被其他使用者修改並儲存。請重新整理頁面以取得最新版本，或複製目前變更後重新整理。',
+                    level: 'error',
+                    timestamp: new Date()
                 }]);
                 alert('【儲存衝突】資料已被他人修改，本次儲存已取消。');
             } else {
@@ -227,7 +228,7 @@ export function Header({
         const mm = (now.getMonth() + 1).toString().padStart(2, '0');
         const dd = now.getDate().toString().padStart(2, '0');
         const mmdd = `${mm}${dd}`;
-        
+
         // 暫時修改標題以改變輸出 PDF 檔名
         document.title = `${data.title || '旅遊手冊'}－手冊${mmdd}`;
 
@@ -255,7 +256,7 @@ export function Header({
         const mm = (now.getMonth() + 1).toString().padStart(2, '0');
         const dd = now.getDate().toString().padStart(2, '0');
         const mmdd = `${mm}${dd}`;
-        
+
         // 暫時修改標題以改變輸出 PDF 檔名
         document.title = `${data.title || '旅遊手冊'}－封面封底_${mmdd}`;
 
@@ -286,7 +287,7 @@ export function Header({
         const mm = (now.getMonth() + 1).toString().padStart(2, '0');
         const dd = now.getDate().toString().padStart(2, '0');
         const mmdd = `${mm}${dd}`;
-        
+
         // 產生預設檔名：標題＋草稿_mmdd
         const exportFileDefaultName = `${data.title || '旅遊手冊'}－草稿_${mmdd}.json`;
 
@@ -351,7 +352,7 @@ export function Header({
                     className="text-xl font-bold"
                     style={{ color: '#1e3a5f' }}
                 >
-                    📖 旅遊手冊產生器
+                    📖 旅遊手冊製作
                 </h1>
 
                 {/* 資料鎖定切換或唯讀狀態 */}
@@ -363,11 +364,10 @@ export function Header({
                 ) : (
                     <button
                         onClick={() => updateData({ isLocked: !data.isLocked })}
-                        className={`ml-4 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border-2 ${
-                            data.isLocked 
-                                ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-sm animate-pulse' 
+                        className={`ml-4 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border-2 ${data.isLocked
+                                ? 'bg-amber-100 border-amber-300 text-amber-700 shadow-sm animate-pulse'
                                 : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300 hover:text-gray-600'
-                        }`}
+                            }`}
                         title={data.isLocked ? "點擊解除鎖定以恢復自動儲存" : "點擊鎖定後將停止自動儲存，保護資料不被意外更改"}
                     >
                         {data.isLocked ? <Lock size={14} /> : <Unlock size={14} />}
@@ -387,7 +387,7 @@ export function Header({
                 {onlineUsers.length > 1 && (
                     <div className="ml-2 flex items-center -space-x-2">
                         {onlineUsers.map((user, idx) => (
-                            <div 
+                            <div
                                 key={idx}
                                 title={`${user} 正在編輯中`}
                                 className="w-7 h-7 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600 cursor-help"
@@ -414,15 +414,14 @@ export function Header({
                 <button
                     onClick={handleSaveToCloud}
                     disabled={isSavingCloud || data.isClosed}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border font-bold transition-all active:scale-95 shadow-sm ${
-                        data.isClosed
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border font-bold transition-all active:scale-95 shadow-sm ${data.isClosed
                             ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200'
-                            : isSavingCloud 
-                                ? 'opacity-70 cursor-wait bg-blue-50 border-blue-100 text-blue-500' 
+                            : isSavingCloud
+                                ? 'opacity-70 cursor-wait bg-blue-50 border-blue-100 text-blue-500'
                                 : saveStatus === 'unsaved'
                                     ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:shadow-md animate-pulse'
                                     : 'bg-white hover:bg-blue-50 text-blue-700 border-blue-200'
-                    }`}
+                        }`}
                     title={data.isClosed ? "手冊已結案，唯讀狀態下無法儲存" : "儲存草稿到 Supabase 雲端並取得分享連結"}
                 >
                     <CloudUpload size={18} className={isSavingCloud ? 'animate-spin' : ''} />
@@ -470,11 +469,10 @@ export function Header({
 
                 <button
                     onClick={() => setIsPublishModalOpen(true)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all ml-1 hover:opacity-90 active:scale-95 ${
-                        data.isPublished 
-                        ? 'bg-green-600 text-white shadow-lg shadow-green-200 animate-pulse' 
-                        : 'bg-blue-600 text-white shadow-lg shadow-blue-100'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all ml-1 hover:opacity-90 active:scale-95 ${data.isPublished
+                            ? 'bg-green-600 text-white shadow-lg shadow-green-200 animate-pulse'
+                            : 'bg-blue-600 text-white shadow-lg shadow-blue-100'
+                        }`}
                 >
                     <Globe size={18} />
                     {data.isPublished ? '已發佈' : '發佈'}
@@ -501,8 +499,8 @@ export function Header({
                     setIsConfirmingSave(false);
                 }}
             />
-            <PublishModal 
-                isOpen={isPublishModalOpen} 
+            <PublishModal
+                isOpen={isPublishModalOpen}
                 onClose={() => setIsPublishModalOpen(false)}
                 isProcessing={isPublishing}
                 renderProgress={publishProgress}
@@ -510,6 +508,8 @@ export function Header({
                 flipCloudId={publishFlipCloudId}
                 publishToFlipCloud={publishToFlipCloud}
                 setPublishToFlipCloud={setPublishToFlipCloud}
+                publishStartAt={publishStartAt}
+                setPublishStartAt={setPublishStartAt}
                 expiresAt={publishExpiresAt}
                 setExpiresAt={setPublishExpiresAt}
                 onPublish={handlePublish}
@@ -539,7 +539,7 @@ export function Header({
                             </p>
                         </div>
                     </div>
-                    
+
                     {publishProgress.total > 0 && (
                         <div className="space-y-1.5">
                             <div className="flex justify-between text-[9px] font-bold text-gray-400">
@@ -547,14 +547,14 @@ export function Header({
                                 <span>{publishProgress.current} / {publishProgress.total} 頁</span>
                             </div>
                             <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden p-0.5 border border-gray-50/50">
-                                <div 
+                                <div
                                     className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300 ease-out shadow-sm"
                                     style={{ width: `${(publishProgress.current / publishProgress.total) * 100}%` }}
                                 />
                             </div>
                         </div>
                     )}
-                    
+
                     <p className="text-[9px] text-amber-600 font-bold bg-amber-50/60 px-2.5 py-1.5 rounded-lg border border-amber-100/40 text-center animate-pulse">
                         ⚠️ 發佈期間請勿關閉或重新整理此網頁
                     </p>
@@ -563,12 +563,10 @@ export function Header({
 
             {/* 發佈狀態 Toast 通知 */}
             {publishToast && publishToast.show && (
-                <div className={`fixed bottom-6 right-6 z-[9999] bg-white/95 backdrop-blur-md border shadow-2xl px-5 py-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5 fade-in duration-300 ${
-                    publishToast.type === 'success' ? 'border-green-100 shadow-green-100/20' : 'border-red-100 shadow-red-100/20'
-                }`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        publishToast.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                <div className={`fixed bottom-6 right-6 z-[9999] bg-white/95 backdrop-blur-md border shadow-2xl px-5 py-4 rounded-2xl flex items-center gap-4 animate-in slide-in-from-bottom-5 fade-in duration-300 ${publishToast.type === 'success' ? 'border-green-100 shadow-green-100/20' : 'border-red-100 shadow-red-100/20'
                     }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${publishToast.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                        }`}>
                         {publishToast.type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
                     </div>
                     <div>

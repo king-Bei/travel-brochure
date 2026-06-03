@@ -14,6 +14,8 @@ export function QuickEditModal({ isOpen, onClose, onSave, meta }: QuickEditModal
     const [status, setStatus] = useState('');
     const [departureDate, setDepartureDate] = useState('');
     const [isClosed, setIsClosed] = useState(false);
+    const [password, setPassword] = useState('');
+    const [clearPassword, setClearPassword] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -22,6 +24,8 @@ export function QuickEditModal({ isOpen, onClose, onSave, meta }: QuickEditModal
             setStatus(meta.status || '待製作');
             setDepartureDate(meta.departureDate || '');
             setIsClosed(!!meta.isClosed);
+            setPassword('');
+            setClearPassword(false);
         }
     }, [meta, isOpen]);
 
@@ -34,7 +38,9 @@ export function QuickEditModal({ isOpen, onClose, onSave, meta }: QuickEditModal
                 category,
                 status,
                 departureDate,
-                isClosed
+                isClosed,
+                password: password.trim() || undefined,
+                clearPassword
             });
             onClose();
         } catch (error) {
@@ -112,6 +118,43 @@ export function QuickEditModal({ isOpen, onClose, onSave, meta }: QuickEditModal
                             onChange={(e) => setDepartureDate(e.target.value)}
                             className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all"
                         />
+                    </div>
+
+                    {/* 電子書密碼保護 */}
+                    <div className="space-y-2 pt-4 border-t border-gray-100">
+                        <label className="text-xs font-bold text-gray-500 flex items-center justify-between uppercase tracking-wider">
+                            <span className="flex items-center gap-1.5">🔑 電子書密碼保護</span>
+                            {meta.passwordHash && (
+                                <span className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-100">🔒 已設定密碼</span>
+                            )}
+                        </label>
+                        <div className="flex gap-3 items-center">
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    if (e.target.value) setClearPassword(false);
+                                }}
+                                disabled={clearPassword}
+                                placeholder={meta.passwordHash ? "輸入新密碼以覆寫" : "設定閱讀密碼（留空 = 公開）"}
+                                className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm transition-all disabled:bg-gray-50 disabled:text-gray-400"
+                            />
+                            {meta.passwordHash && (
+                                <label className="flex items-center gap-1.5 text-xs text-red-500 cursor-pointer select-none font-bold whitespace-nowrap">
+                                    <input
+                                        type="checkbox"
+                                        checked={clearPassword}
+                                        onChange={(e) => {
+                                            setClearPassword(e.target.checked);
+                                            if (e.target.checked) setPassword('');
+                                        }}
+                                        className="rounded border-gray-300 text-red-600 focus:ring-red-500 transition-all cursor-pointer"
+                                    />
+                                    清除密碼
+                                </label>
+                            )}
+                        </div>
                     </div>
 
                     <div className="pt-4 border-t border-gray-100">

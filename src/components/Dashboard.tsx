@@ -5,15 +5,16 @@ import { HistoryModal } from './HistoryModal';
 import { QuickEditModal } from './QuickEditModal';
 import { supabase } from '../lib/supabase';
 import { auth } from '../lib/auth';
-import type { BrochureData } from '../types';
+import { createDefaultData, type BrochureData } from '../types';
 
 interface DashboardProps {
     onSelectBrochure: (id: string) => void;
     onLogout: () => void;
     onGoToManagement: () => void;
+    onGoToEbookManagement: () => void;
 }
 
-export function Dashboard({ onSelectBrochure, onLogout, onGoToManagement }: DashboardProps) {
+export function Dashboard({ onSelectBrochure, onLogout, onGoToManagement, onGoToEbookManagement }: DashboardProps) {
     const [isCreating, setIsCreating] = useState(false);
     const [brochures, setBrochures] = useState<BrochureMeta[]>([]);
 
@@ -33,13 +34,13 @@ export function Dashboard({ onSelectBrochure, onLogout, onGoToManagement }: Dash
     const [statusFilter, setStatusFilter] = useState<string>('全部');
     const [showClosed, setShowClosed] = useState(false);
 
-    const loadList = async () => {
-        const list = await storage.getList();
-        setBrochures(list);
+    const loadList = async (forceCloud = false) => {
+        const list = await storage.getList(forceCloud);
+        setBrochures(list.filter(b => b.source !== 'pdf'));
     };
 
     useEffect(() => {
-        loadList();
+        loadList(true);
     }, []);
 
     const handleCreate = async () => {
@@ -72,19 +73,28 @@ export function Dashboard({ onSelectBrochure, onLogout, onGoToManagement }: Dash
         if (!dataToDuplicate) return;
 
         const newId = crypto.randomUUID();
-        const duplicatedData = {
-            ...dataToDuplicate,
-            title: `${dataToDuplicate.title} (複製)`,
-        };
+        const duplicatedData: BrochureData = dataToDuplicate.isClosed
+            ? {
+                ...createDefaultData(),
+                title: `${dataToDuplicate.title} (新製作)`,
+                category: dataToDuplicate.category || '出團',
+                status: '待製作',
+                isClosed: false,
+            }
+            : {
+                ...dataToDuplicate,
+                title: `${dataToDuplicate.title} (複製)`,
+                isClosed: false,
+            };
         await storage.saveBrochure(newId, duplicatedData);
-        await loadList();
+        await loadList(true);
     };
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         if (window.confirm('確定要「永久刪除」這份手冊嗎？此動作將嘗試從雲端與本機同時抹除，無法復原。')) {
             await storage.deleteBrochure(id);
-            await loadList();
+            await loadList(true);
         }
     };
 
@@ -131,7 +141,7 @@ export function Dashboard({ onSelectBrochure, onLogout, onGoToManagement }: Dash
     const handleQuickSave = async (id: string, updates: any) => {
         const result = await storage.updateMetadata(id, updates);
         if (result.success) {
-            await loadList();
+            await loadList(true);
         } else {
             throw new Error(result.error);
         }
@@ -160,14 +170,21 @@ export function Dashboard({ onSelectBrochure, onLogout, onGoToManagement }: Dash
                         <LogOut size={18} />
                         <span className="hidden sm:inline">登出</span>
                     </button>
-                    <div className="w-px h-6 bg-gray-300 mx-2"></div>
                     <button
                         onClick={onGoToManagement}
-                        className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 font-medium rounded-lg transition-colors border border-transparent"
-                        title="發佈管理頁面"
+                        className="flex items-center gap-2 px-3.5 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 font-bold rounded-xl transition-all shadow-sm shadow-blue-50 cursor-pointer"
+                        title="系統手冊發佈管理"
                     >
                         <Globe size={18} />
-                        <span className="hidden sm:inline">發佈管理</span>
+                        <span className="hidden sm:inline">手冊發佈管理</span>
+                    </button>
+                    <button
+                        onClick={onGoToEbookManagement}
+                        className="flex items-center gap-2 px-3.5 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-100 font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+                        title="PDF 電子書管理"
+                    >
+                        <span className="text-base leading-none">📄</span>
+                        <span className="hidden sm:inline">PDF 電子書</span>
                     </button>
                     <div className="w-px h-6 bg-gray-300 mx-2"></div>
                     <button

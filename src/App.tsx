@@ -1,17 +1,29 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import { Globe, Sparkles } from 'lucide-react';
 import { BrochureProvider, useBrochure } from './context/BrochureContext';
 import { EditorPanel } from './components/editor/EditorPanel';
 import { PreviewPanel } from './components/preview/PreviewPanel';
 import { Header } from './components/Header';
-import { Dashboard } from './components/Dashboard';
 import { Login } from './components/Login';
-import { Management } from './components/Management';
-import { EBookView } from './components/preview/EBookView';
 import { auth } from './lib/auth';
 import { supabase } from './lib/supabase';
 import { storage } from './lib/storage';
+import { createDefaultData } from './types';
 import type { BrochureData, User } from './types';
+
+const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const Management = lazy(() => import('./components/Management').then(m => ({ default: m.Management })));
+const EbookManagement = lazy(() => import('./components/EbookManagement').then(m => ({ default: m.EbookManagement })));
+const EBookView = lazy(() => import('./components/preview/EBookView').then(m => ({ default: m.EBookView })));
+const EBookShelf = lazy(() => import('./components/preview/EBookShelf').then(m => ({ default: m.EBookShelf })));
+
+function PageLoader() {
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-white">
+      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: string, currentUser: User | null, onBackToDashboard: () => void }) {
   const { data, updateData } = useBrochure();
@@ -178,7 +190,7 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
 }
 
 function App() {
-  const [view, setView] = useState<'login' | 'dashboard' | 'editor' | 'management' | 'ebook'>('login');
+  const [view, setView] = useState<'login' | 'dashboard' | 'editor' | 'management' | 'ebook-management' | 'ebook' | 'shelf'>('login');
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -194,35 +206,116 @@ function App() {
       // 2. 處理網址參數
       const urlParams = new URLSearchParams(window.location.search);
       const urlId = urlParams.get('id');
+      const bookId = urlParams.get('book');
       const mode = urlParams.get('mode');
 
-      // 電子書模式特殊處理 (不強制導向登入，但會檢查發佈狀態)
-      if (mode === 'ebook' && urlId) {
-        let cloudData = await storage.getBrochure(urlId, true); // E-Book 模式需要圖片
-        
-        // 如果找不到 id，嘗試搜尋 shortId
-        if (!cloudData && supabase) {
-            const { data: found } = await supabase
-                .from('brochures')
-                .select('data')
-                .eq('data->>shortId', urlId)
-                .single();
-            if (found) cloudData = found.data as BrochureData;
+      const loadEbookById = async (id: string): Promise<BrochureData | null> => {
+        if (!supabase) return null;
+        const { data: ebookItem, error } = await supabase
+          .from('ebooks')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error || !ebookItem) return null;
+
+        let ebookData = (ebookItem as any).data || {};
+        if (typeof ebookData === 'string') {
+          try {
+            ebookData = JSON.parse(ebookData);
+          } catch {
+            ebookData = {};
+          }
         }
 
-        if (cloudData) {
-            // 檢查是否已過期 (下架)
-            const isExpired = cloudData.expiresAt && new Date(cloudData.expiresAt).getTime() < new Date().setHours(0,0,0,0);
-            
-            if ((cloudData.isPublished && !isExpired) || currentUser) { // 已發佈且未過期，或已登入管理者皆可看
-              setInitialData(cloudData);
-              setCurrentId(urlId); // 這裡雖然是 shortId 但 context 會用 initialData
-              setView('ebook');
-              setLoading(false);
-              return;
-            } else {
-              alert(isExpired ? '此手冊已過期下架。' : '此手冊尚未發佈，無法線上閱讀。');
+        const normalizeUrls = (...candidates: any[]) => {
+          const toPublicUrl = (value: string) => {
+            const trimmed = value.trim();
+            if (!trimmed) return '';
+            if (trimmed.startsWith('http') || trimmed.startsWith('data:')) return trimmed;
+            if (!supabase) return trimmed;
+            let cleanPath = trimmed.replace(/^\/+/, '');
+            cleanPath = cleanPath.replace(/^brochures\//, '');
+            cleanPath = cleanPath.replace(/^storage\/v1\/object\/public\/brochures\//, '');
+            const { data: { publicUrl } } = supabase.storage.from('brochures').getPublicUrl(cleanPath);
+            return publicUrl;
+          };
+
+          for (const candidate of candidates) {
+            if (!candidate) continue;
+            if (Array.isArray(candidate)) return candidate.map(item => typeof item === 'string' ? toPublicUrl(item) : item?.publicUrl || item?.url || item?.src || '').filter(Boolean);
+            if (typeof candidate === 'string') {
+              try {
+                const parsed = JSON.parse(candidate);
+                if (Array.isArray(parsed)) return parsed.map(item => typeof item === 'string' ? toPublicUrl(item) : item?.publicUrl || item?.url || item?.src || '').filter(Boolean);
+              } catch {
+                return [toPublicUrl(candidate)].filter(Boolean);
+              }
             }
+          }
+          return [];
+        };
+
+        const listStorageImages = async () => {
+          const dirs = [`ebooks/${id}`, `ebooks/ebooks/${id}`, `brochures/${id}`, id];
+          for (const dir of dirs) {
+            const { data: files, error } = await supabase!.storage
+              .from('brochures')
+              .list(dir, { limit: 200, sortBy: { column: 'name', order: 'asc' } });
+            if (error || !files?.length) continue;
+            const pageFiles = files
+              .filter((file: any) => /^page[_-]?\d+/i.test(file.name))
+              .map((file: any) => `${dir}/${file.name}`);
+            if (pageFiles.length) return normalizeUrls(pageFiles);
+          }
+          return [];
+        };
+
+        let publishedImages = normalizeUrls(
+          (ebookItem as any).images,
+          (ebookItem as any).pages,
+          ebookData.publishedImages,
+          ebookData.pages,
+          ebookData.images,
+          ebookData.pageUrls
+        );
+
+        if (publishedImages.length === 0) {
+          publishedImages = await listStorageImages();
+        }
+
+        return {
+          ...createDefaultData(),
+          title: (ebookItem as any).title || ebookData.title || '未命名電子書',
+          category: (ebookItem as any).category || ebookData.category || '出團',
+          isPublished: ebookData.isPublished ?? (ebookItem as any).is_published ?? ((ebookItem as any).status === '已發佈'),
+          publishedAt: ebookData.publishedAt || (ebookItem as any).published_at || (ebookItem as any).created_at || '',
+          publishStartAt: ebookData.publishStartAt || (ebookItem as any).published_at || '',
+          expiresAt: ebookData.expiresAt || (ebookItem as any).expires_at || '',
+          passwordHash: ebookData.passwordHash || '',
+          publishedImages,
+          ebookId: (ebookItem as any).id,
+          source: 'pdf',
+        };
+      };
+
+      // 1. 電子書櫃模式 (公開免登入)
+      if (mode === 'shelf') {
+        setView('shelf');
+        setLoading(false);
+        return;
+      }
+
+      // 2. 電子書閱讀模式 (公開免登入)：只讀 ebooks 表與 Supabase Storage 圖片
+      if (bookId) {
+        const cloudData = await loadEbookById(bookId);
+
+        if (cloudData) {
+            setInitialData(cloudData);
+            setCurrentId(bookId); 
+            setView('ebook');
+            setLoading(false);
+            return;
         }
       }
 
@@ -395,51 +488,76 @@ function App() {
   }
 
   if (view === 'dashboard') {
-    return <Dashboard 
-      onLogout={async () => {
-        await auth.logout();
-        setView('login');
-      }}
-      onGoToManagement={() => setView('management')}
-      onSelectBrochure={async (id) => {
-      setLoading(true);
-      const loadedData = await storage.getBrochure(id, false); // 從列表進入編輯器不需圖片
-
-      setLoading(false);
-
-      if (loadedData) {
-        setInitialData(loadedData);
-        setCurrentId(id);
-        setView('editor');
-        // 清除網址的 ?id 除非想要保持雲端連結（點擊雲端儲存時才會再次設定）
-        window.history.pushState({}, '', window.location.pathname);
-      } else {
-        alert('無法載入此手冊的詳細資料，可能尚未同步且本機無快取。');
-      }
-    }} />
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Dashboard
+          onLogout={async () => {
+            await auth.logout();
+            setView('login');
+          }}
+          onGoToManagement={() => setView('management')}
+          onGoToEbookManagement={() => setView('ebook-management')}
+          onSelectBrochure={async (id) => {
+            setLoading(true);
+            const loadedData = await storage.getBrochure(id, false);
+            setLoading(false);
+            if (loadedData) {
+              setInitialData(loadedData);
+              setCurrentId(id);
+              setView('editor');
+              window.history.pushState({}, '', window.location.pathname);
+            } else {
+              alert('無法載入此手冊的詳細資料，可能尚未同步且本機無快取。');
+            }
+          }}
+        />
+      </Suspense>
+    );
   }
 
   if (view === 'management') {
-    return <Management 
-      onBack={() => setView('dashboard')}
-      onEdit={async (id) => {
-        setLoading(true);
-        const loadedData = await storage.getBrochure(id, false); // 管理頁面進入編輯不需圖片
-        setLoading(false);
-        if (loadedData) {
-           setInitialData(loadedData);
-           setCurrentId(id);
-           setView('editor');
-        }
-      }}
-    />
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Management
+          onBack={() => setView('dashboard')}
+          onEdit={async (id) => {
+            setLoading(true);
+            const loadedData = await storage.getBrochure(id, false);
+            setLoading(false);
+            if (loadedData) {
+              setInitialData(loadedData);
+              setCurrentId(id);
+              setView('editor');
+            }
+          }}
+        />
+      </Suspense>
+    );
+  }
+
+  if (view === 'ebook-management') {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <EbookManagement onBack={() => setView('dashboard')} />
+      </Suspense>
+    );
+  }
+
+  if (view === 'shelf') {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <EBookShelf />
+      </Suspense>
+    );
   }
 
   if (view === 'ebook') {
     return (
-      <BrochureProvider initialData={initialData}>
-        <EBookView />
-      </BrochureProvider>
+      <Suspense fallback={<PageLoader />}>
+        <BrochureProvider initialData={initialData}>
+          <EBookView />
+        </BrochureProvider>
+      </Suspense>
     );
   }
 

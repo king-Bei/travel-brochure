@@ -11,6 +11,8 @@ interface PublishModalProps {
   flipCloudId: string | null;
   publishToFlipCloud: boolean;
   setPublishToFlipCloud: (val: boolean) => void;
+  publishStartAt: string;
+  setPublishStartAt: (val: string) => void;
   expiresAt: string;
   setExpiresAt: (val: string) => void;
   onPublish: () => Promise<void>;
@@ -26,6 +28,8 @@ export function PublishModal({
   flipCloudId,
   publishToFlipCloud,
   setPublishToFlipCloud,
+  publishStartAt,
+  setPublishStartAt,
   expiresAt,
   setExpiresAt,
   onPublish,
@@ -35,10 +39,9 @@ export function PublishModal({
 
   if (!isOpen) return null;
 
-  const ebookReaderBaseUrl = import.meta.env.VITE_EBOOK_READER_URL || `${window.location.origin}/ebook`;
-  const ebookUrl = data.ebookId 
-    ? `${ebookReaderBaseUrl}/?book=${data.ebookId}`
-    : `${window.location.origin}${window.location.pathname}?id=${(new URLSearchParams(window.location.search)).get('id')}&mode=ebook`;
+  const ebookId = data.ebookId || flipCloudId || '';
+  const ebookUrl = ebookId ? `${window.location.origin}${window.location.pathname}?book=${ebookId}` : '';
+  const previewUrl = ebookUrl ? `${ebookUrl}&preview=1` : '';
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 no-print">
@@ -77,13 +80,18 @@ export function PublishModal({
                     上次發佈時間：{new Date(data.publishedAt).toLocaleString()}
                   </p>
                 )}
+                {(data.publishStartAt || data.expiresAt) && (
+                  <p className="text-xs text-gray-500">
+                    上架期間：{data.publishStartAt || '立即'} ~ {data.expiresAt || '無期限'}
+                  </p>
+                )}
               </div>
               {data.isPublished && (
                 <CheckCircle2 size={32} className="text-green-500" />
               )}
             </div>
 
-            {data.isPublished && (
+            {data.isPublished && ebookUrl && (
                 <div className="mt-4 pt-4 border-t border-green-100 flex flex-col gap-3">
                     <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-green-100">
                         <LinkIcon size={14} className="text-green-600" />
@@ -110,6 +118,36 @@ export function PublishModal({
                     >
                         <ExternalLink size={14} /> 立即預覽電子書
                     </a>
+                    <div className="flex items-center gap-2 p-2.5 bg-amber-50 rounded-xl border border-amber-100">
+                        <LinkIcon size={14} className="text-amber-600" />
+                        <input
+                            readOnly
+                            value={previewUrl}
+                            className="flex-1 text-[11px] font-mono text-gray-500 bg-transparent outline-none"
+                        />
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(previewUrl);
+                                alert('預覽連結已複製！');
+                            }}
+                            className="text-[10px] font-bold text-amber-700 hover:underline"
+                        >
+                            複製預覽
+                        </button>
+                    </div>
+                    <a
+                      href={previewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold hover:bg-amber-600 transition-colors"
+                    >
+                        <ExternalLink size={14} /> 開啟內部預覽
+                    </a>
+                </div>
+            )}
+            {data.isPublished && !ebookUrl && (
+                <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                    尚未產生電子書 ID。請開啟「同步上架至 FlipCloud」並重新發佈，才會產生可閱讀連結。
                 </div>
             )}
           </div>
@@ -144,7 +182,17 @@ export function PublishModal({
                 </div>
 
                 <div>
-                    <p className="text-[11px] text-gray-400 mb-2">預定下架時間 (選填)</p>
+                    <p className="text-[11px] text-gray-400 mb-2">預定上架日期 (選填)</p>
+                    <input
+                        type="date"
+                        value={publishStartAt}
+                        onChange={(e) => setPublishStartAt(e.target.value)}
+                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all text-sm"
+                    />
+                </div>
+
+                <div>
+                    <p className="text-[11px] text-gray-400 mb-2">預定下架日期 (選填)</p>
                     <input 
                         type="date"
                         value={expiresAt}
@@ -156,7 +204,7 @@ export function PublishModal({
           </div>
 
           {/* FlipCloud 成功連結 (如果有) */}
-          {flipCloudId && (
+          {flipCloudId && ebookUrl && (
             <div className="p-5 rounded-2xl border bg-blue-50 border-blue-100 animate-in slide-in-from-top duration-500">
                 <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-blue-600 text-white rounded-xl">
@@ -171,12 +219,12 @@ export function PublishModal({
                     <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-blue-100">
                         <input 
                             readOnly 
-                            value={`${ebookReaderBaseUrl}/?book=${flipCloudId}`} 
+                            value={ebookUrl} 
                             className="flex-1 text-[10px] font-mono text-gray-500 bg-transparent outline-none"
                         />
                         <button 
                             onClick={() => {
-                                navigator.clipboard.writeText(`${ebookReaderBaseUrl}/?book=${flipCloudId}`);
+                                navigator.clipboard.writeText(ebookUrl);
                                 alert('電子書連結已複製！');
                             }}
                             className="text-[10px] font-bold text-blue-600 hover:underline"
@@ -185,7 +233,7 @@ export function PublishModal({
                         </button>
                     </div>
                     <a 
-                      href={`${ebookReaderBaseUrl}/?book=${flipCloudId}`} 
+                      href={ebookUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors"
@@ -270,4 +318,3 @@ export function PublishModal({
     </div>
   );
 }
-

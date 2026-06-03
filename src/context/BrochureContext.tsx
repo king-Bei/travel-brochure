@@ -74,7 +74,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
 
   const updateData = (updates: Partial<BrochureData>) => {
     // 判斷是否只包含允許在鎖定狀態下更新的欄位 (metadata 或鎖定狀態本身)
-    const allowedKeys = ['isLocked', 'serverUpdatedAt', 'isPublished', 'publishedAt', 'expiresAt', 'publishedImages', 'ebookId', 'publishHistory', 'version'];
+    const allowedKeys = ['isLocked', 'serverUpdatedAt', 'isPublished', 'publishedAt', 'publishStartAt', 'expiresAt', 'publishedImages', 'ebookId', 'publishHistory', 'version'];
     const isOnlyAllowedUpdates = Object.keys(updates).every(key => allowedKeys.includes(key));
 
     if (data.isLocked && !isOnlyAllowedUpdates) {
