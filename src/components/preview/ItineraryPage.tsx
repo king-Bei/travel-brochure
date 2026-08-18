@@ -32,7 +32,8 @@ export function ItineraryPage() {
                 return (
                   <div
                     key={index}
-                    className="flex gap-3 p-3 bg-white rounded-xl shadow-sm border border-gray-100 relative overflow-hidden group"
+                    className="flex gap-3 p-3 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden group"
+                    style={{ backgroundColor: `${data.theme.primary}08` }}
                   >
                     {/* 左側天數裝飾 - 調整為高度略縮，避免被圓角切割感 */}
                     <div
@@ -107,9 +108,29 @@ export function ItineraryPage() {
                       {/* 景點介紹 */}
                       {day.attractions && (
                         <div className="mt-2 p-2.5 bg-gray-50/70 rounded-xl border border-gray-100">
-                          <h4 className="text-[11px] font-bold mb-1 flex items-center gap-1.5" style={{ color: data.theme.primary }}>
+                          <h4 className="text-[11px] font-bold mb-1.5 flex items-center gap-1.5" style={{ color: data.theme.primary }}>
                             <MapPin size={12} /> 景點特色
                           </h4>
+                          
+                          {/* 景點特色圖片網格 */}
+                          {day.attractionImages && day.attractionImages.length > 0 && (
+                            <div className={`grid gap-1 mb-2 rounded-lg overflow-hidden ${
+                              day.attractionImages.length === 1 ? 'grid-cols-1' :
+                              day.attractionImages.length === 2 ? 'grid-cols-2' :
+                              'grid-cols-3'
+                            }`}>
+                              {day.attractionImages.map((img: string, imgIndex: number) => (
+                                <div key={imgIndex} className="relative aspect-video">
+                                  <img
+                                    src={img}
+                                    alt={`Attraction feature ${imgIndex}`}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
                           <p className="dynamic-text text-gray-700 whitespace-pre-wrap">
                             {parseRichText(day.attractions, data.theme.primary)}
                           </p>

@@ -26,25 +26,16 @@ function PageLoader() {
 }
 
 function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: string, currentUser: User | null, onBackToDashboard: () => void }) {
-  const { data, updateData } = useBrochure();
+  const { data, markSaved, setSaveInProgress } = useBrochure();
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [hasConflict, setHasConflict] = useState(false);
   const isFirstMount = React.useRef(true);
+  const saveInFlightRef = useRef(false);
   const [syncToast, setSyncToast] = useState<{ show: boolean; editor: string }>({ show: false, editor: '' });
 
   const lastSavedDataRef = useRef<string>(JSON.stringify(data));
-
-  // 當雲端時間戳變動時 (無論是自己儲存還是協同同步過來)，立即同步更新 lastSavedDataRef
-  // 這是防範協作更新回彈觸發「自動儲存死循環」的關鍵防線！
-  useEffect(() => {
-    if (data.serverUpdatedAt) {
-      const dataToCompare = { ...data };
-      delete (dataToCompare as any).serverUpdatedAt;
-      lastSavedDataRef.current = JSON.stringify(dataToCompare);
-    }
-  }, [data.serverUpdatedAt]);
 
   // 監聽全域實時同步事件，彈出精緻協同通知
   useEffect(() => {
@@ -62,7 +53,18 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
     return () => window.removeEventListener('brochure-collaborative-sync', handleSync);
   }, []);
 
-  // 20秒防抖自動儲存
+  useEffect(() => {
+    const handleRemoteConflict = (e: Event) => {
+      const editor = (e as CustomEvent<{ editor?: string }>).detail?.editor || '其他使用者';
+      setHasConflict(true);
+      setSaveStatus('unsaved');
+      setSyncToast({ show: true, editor: `${editor}（雲端已有新版，本地草稿已保留）` });
+    };
+    window.addEventListener('brochure-remote-conflict', handleRemoteConflict);
+    return () => window.removeEventListener('brochure-remote-conflict', handleRemoteConflict);
+  }, []);
+
+  // 3 秒防抖自動儲存
   useEffect(() => {
     // 初始掛載時不觸發儲存
     if (isFirstMount.current) {
@@ -72,8 +74,12 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
     }
 
     // 資料已鎖定、發生衝突或已結案時不自動儲存
-    if (data.isLocked || hasConflict || data.isClosed) {
+    if (data.isLocked || data.isClosed) {
       setSaveStatus('saved');
+      return;
+    }
+    if (hasConflict) {
+      setSaveStatus('unsaved');
       return;
     }
 
@@ -93,30 +99,38 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
 
     setSaveStatus('unsaved');
     const timer = setTimeout(async () => {
+      if (saveInFlightRef.current) return;
+      saveInFlightRef.current = true;
+      setSaveInProgress(true);
       setSaveStatus('saving');
-      const result = await storage.saveBrochure(currentId, data, true); // true 代表這是自動儲存，不產生版本快照
-      
-      if (result.success) {
-        lastSavedDataRef.current = JSON.stringify(data); // 標記為已儲存
-        setLastSaved(new Date());
-        setSaveStatus('saved');
-        // 更新 Context 中的時間戳，以便下次儲存
-        if (data.serverUpdatedAt) {
-           updateData({ serverUpdatedAt: data.serverUpdatedAt });
+      const snapshot = structuredClone(data);
+      try {
+        const result = await storage.saveBrochure(currentId, snapshot, true); // true 代表這是自動儲存，不產生版本快照
+
+        if (result.success) {
+          const savedComparable = { ...snapshot };
+          delete savedComparable.serverUpdatedAt;
+          lastSavedDataRef.current = JSON.stringify(savedComparable);
+          setLastSaved(new Date());
+          setSaveStatus('saved');
+          markSaved(snapshot, result.serverUpdatedAt);
+        } else if (result.error === 'CONFLICT') {
+          setSaveStatus('unsaved');
+          setHasConflict(true);
+          alert('【儲存衝突】此手冊已被其他使用者修改並儲存。\n\n您的本地草稿已保留，自動儲存已暫停。請先複製草稿，再重新整理取得最新版本。');
+        } else {
+          // 同步失敗時回到待儲存狀態，以便使用者再次手動觸發或重試
+          console.error('自動儲存同步失敗:', result.error);
+          setSaveStatus('unsaved');
         }
-      } else if (result.error === 'CONFLICT') {
-        setSaveStatus('unsaved');
-        setHasConflict(true);
-        alert('【儲存衝突】此手冊已被其他使用者修改並儲存。\n\n為避免覆蓋他人的變更，自動儲存已暫停。請複製您的變更後，重新整理頁面以取得最新版本。');
-      } else {
-        // 同步失敗時回到待儲存狀態，以便使用者再次手動觸發或重試
-        console.error('自動儲存同步失敗:', result.error);
-        setSaveStatus('unsaved');
+      } finally {
+        saveInFlightRef.current = false;
+        setSaveInProgress(false);
       }
-    }, 20000);
+    }, 3000);
 
     return () => clearTimeout(timer);
-  }, [data, currentId, hasConflict]);
+  }, [data, currentId, hasConflict, markSaved, setSaveInProgress]);
 
   // 實時在線 Presence 監聽
   useEffect(() => {

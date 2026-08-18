@@ -38,6 +38,7 @@ export interface ItineraryDay {
   };
   hotelIndex: number | null;
   images: string[];
+  attractionImages?: string[];
   pageBreakBefore?: boolean; // 手動換頁標示
 }
 
@@ -443,7 +444,7 @@ export function createDefaultData(): BrochureData {
     tocText: '',
     tocImage: '',
     coverStyle: 'classic',
-    showTOCItineraryDetails: true,
+    showTOCItineraryDetails: false,
     notesCount: 0,
     headerLogo: '',
     headerText: '',
@@ -478,6 +479,7 @@ export function initializeItineraries(duration: number): ItineraryDay[] {
     },
     hotelIndex: null,
     images: [],
+    attractionImages: [],
   }));
 }
 

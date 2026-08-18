@@ -188,7 +188,7 @@ export const storage = {
     },
 
     // 儲存單一本手冊內容（同步到雲端，優化順序以防本地快取污染）
-    async saveBrochure(id: string, data: BrochureData, isAutoSave: boolean = false): Promise<{ success: boolean; error?: string }> {
+    async saveBrochure(id: string, data: BrochureData, isAutoSave: boolean = false): Promise<{ success: boolean; error?: string; serverUpdatedAt?: string }> {
         // 如果已發佈但還沒有短代碼，生成一個
         if (data.isPublished && !data.shortId) {
             const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -202,6 +202,7 @@ export const storage = {
         const now = new Date().toISOString();
         let syncError = '';
         let isConflict = false;
+        let savedServerUpdatedAt = data.serverUpdatedAt;
         
         // 1. 準備儲存的資料，移除暫存的 serverUpdatedAt 欄位
         let dataToSave = { ...data };
@@ -271,6 +272,7 @@ export const storage = {
                         isConflict = true;
                     } else {
                         newUpdatedAt = updatedData[0].updated_at;
+                        savedServerUpdatedAt = newUpdatedAt;
                         data.serverUpdatedAt = newUpdatedAt; // 回填時間戳
                     }
                 } else {
@@ -294,6 +296,7 @@ export const storage = {
                         syncError = error.message;
                     } else if (insertedData && insertedData.length > 0) {
                         newUpdatedAt = insertedData[0].updated_at;
+                        savedServerUpdatedAt = newUpdatedAt;
                         data.serverUpdatedAt = newUpdatedAt; // 回填時間戳
                     }
                 }
@@ -434,7 +437,11 @@ export const storage = {
             console.error('本地存取更新失敗：', error);
         }
 
-        return { success: !syncError, error: syncError };
+        return {
+            success: !syncError,
+            error: syncError || undefined,
+            serverUpdatedAt: !syncError ? savedServerUpdatedAt : undefined
+        };
     },
 
     // 建立全新手冊

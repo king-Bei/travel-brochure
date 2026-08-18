@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import {
@@ -14,6 +14,8 @@ import {
 interface BrochureContextType {
   data: BrochureData;
   updateData: (updates: Partial<BrochureData>) => void;
+  markSaved: (savedData: BrochureData, serverUpdatedAt?: string) => void;
+  setSaveInProgress: (saving: boolean) => void;
   setTheme: (theme: ThemeColors | keyof typeof themes) => void;
   addPackingItem: (text: string, important: boolean) => void;
   removePackingItem: (index: number) => void;
@@ -23,6 +25,8 @@ interface BrochureContextType {
 const BrochureContext = createContext<BrochureContextType | undefined>(undefined);
 
 export function BrochureProvider({ children, initialData }: { children: ReactNode, initialData?: BrochureData | null }) {
+  const hasLocalChangesRef = useRef(false);
+  const saveInProgressRef = useRef(false);
   const [data, setData] = useState<BrochureData>(() => {
     const defaults = createDefaultData();
     if (initialData) {
@@ -72,7 +76,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
     return initial;
   });
 
-  const updateData = (updates: Partial<BrochureData>) => {
+  const updateData = useCallback((updates: Partial<BrochureData>) => {
     // 判斷是否只包含允許在鎖定狀態下更新的欄位 (metadata 或鎖定狀態本身)
     const allowedKeys = ['isLocked', 'serverUpdatedAt', 'isPublished', 'publishedAt', 'publishStartAt', 'expiresAt', 'publishedImages', 'ebookId', 'publishHistory', 'version'];
     const isOnlyAllowedUpdates = Object.keys(updates).every(key => allowedKeys.includes(key));
@@ -84,10 +88,33 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
 
     setData(prev => {
       const newData = { ...prev, ...updates };
+      if (Object.keys(updates).some(key => key !== 'serverUpdatedAt')) {
+        hasLocalChangesRef.current = true;
+      }
       // 依使用者要求，取消 "天數更改時自動重設同步飯店與行程" 邏汇
       return newData;
     });
-  };
+  }, [data.isLocked]);
+
+  const markSaved = useCallback((savedData: BrochureData, serverUpdatedAt?: string) => {
+    setData(prev => {
+      const comparable = (value: BrochureData) => {
+        const copy = { ...value };
+        delete copy.serverUpdatedAt;
+        return JSON.stringify(copy);
+      };
+
+      // 儲存期間若又有輸入，只更新版本戳，不把較舊快照誤認為全部已儲存。
+      hasLocalChangesRef.current = comparable(prev) !== comparable(savedData);
+      return serverUpdatedAt && prev.serverUpdatedAt !== serverUpdatedAt
+        ? { ...prev, serverUpdatedAt }
+        : prev;
+    });
+  }, []);
+
+  const setSaveInProgress = useCallback((saving: boolean) => {
+    saveInProgressRef.current = saving;
+  }, []);
 
   const setTheme = (theme: ThemeColors | keyof typeof themes) => {
     if (data.isLocked) {
@@ -106,6 +133,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
       alert('資料已鎖定，禁止修改。請先解鎖！');
       return;
     }
+    hasLocalChangesRef.current = true;
     setData(prev => ({
       ...prev,
       packingList: [...prev.packingList, { text, important }],
@@ -117,6 +145,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
       alert('資料已鎖定，禁止修改。請先解鎖！');
       return;
     }
+    hasLocalChangesRef.current = true;
     setData(prev => ({
       ...prev,
       packingList: prev.packingList.filter((_, i) => i !== index),
@@ -128,6 +157,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
       alert('資料已鎖定，禁止修改。請先解鎖！');
       return;
     }
+    hasLocalChangesRef.current = true;
     setData(prev => ({
       ...prev,
       pageSettings: {
@@ -175,6 +205,17 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
               return prev;
             }
 
+            // 本地有草稿時絕不以整份雲端資料覆蓋；保留草稿並交由 CAS 儲存流程提示衝突。
+            if (hasLocalChangesRef.current) {
+              // 儲存請求觸發的 Realtime 通知可能早於 HTTP 回應；先交給 CAS 結果確認。
+              if (saveInProgressRef.current) return prev;
+              const conflictEvent = new CustomEvent('brochure-remote-conflict', {
+                detail: { editor: cloudEditor, updatedAt: cloudUpdatedAt }
+              });
+              window.dispatchEvent(conflictEvent);
+              return prev;
+            }
+
             console.log(`[協作系統] 偵測到雲端有最新變更 (修改者: ${cloudEditor})。開始執行背景自動合併...`);
 
             // 智慧自動合併：
@@ -183,6 +224,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
             // 我們把雲端上的最新 publishedImages、isPublished、isLocked 以及 schema 資料與本地進行合併
             const merged = { ...prev, ...cloudData };
             merged.serverUpdatedAt = cloudUpdatedAt;
+            hasLocalChangesRef.current = false;
             
             // 拋出一個全域自訂事件，讓 UI 可以貼心地呈現浮動 Toast 通知
             const syncEvent = new CustomEvent('brochure-collaborative-sync', {
@@ -205,7 +247,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   }, [brochureId]);
 
   return (
-    <BrochureContext.Provider value={{ data, updateData, setTheme, addPackingItem, removePackingItem, updatePageSetting }}>
+    <BrochureContext.Provider value={{ data, updateData, markSaved, setSaveInProgress, setTheme, addPackingItem, removePackingItem, updatePageSetting }}>
       {children}
     </BrochureContext.Provider>
   );

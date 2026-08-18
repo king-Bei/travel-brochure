@@ -109,7 +109,7 @@ export function TOCPage() {
                         </div>
                     )}
                 </div>
-                {sectionId === 'itinerary' && data.showTOCItineraryDetails !== false && data.itineraries && data.itineraries.length > 0 && (
+                {sectionId === 'itinerary' && data.showTOCItineraryDetails === true && data.itineraries && data.itineraries.length > 0 && (
                     <div className="pl-6 space-y-2 pt-1">
                         {data.itineraries.map((day, i) => (
                             <div key={i} className="flex items-center gap-2 text-[13px] text-gray-700">

@@ -21,7 +21,7 @@ export function Header({
     saveStatus?: 'saved' | 'saving' | 'unsaved',
     onlineUsers?: string[]
 }) {
-    const { data, updateData } = useBrochure();
+    const { data, updateData, markSaved, setSaveInProgress } = useBrochure();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -194,9 +194,11 @@ export function Header({
 
         try {
             const dataToSave = { ...data };
+            setSaveInProgress(true);
             const result = await storage.saveBrochure(existingId, dataToSave);
 
             if (result.success) {
+                markSaved(dataToSave, result.serverUpdatedAt);
                 setLogs([{ id: '1', message: '儲存成功', level: 'success', timestamp: new Date() }]);
                 // 更新 Context 中的時間戳，以便下次儲存
                 if (data.serverUpdatedAt) {
@@ -217,6 +219,7 @@ export function Header({
             console.error('儲存失敗:', error);
             setLogs([{ id: 'err', message: error.message || '儲存失敗，請檢查網路連線', level: 'error', timestamp: new Date() }]);
         } finally {
+            setSaveInProgress(false);
             setIsSavingCloud(false);
         }
     };

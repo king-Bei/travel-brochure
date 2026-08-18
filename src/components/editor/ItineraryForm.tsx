@@ -62,6 +62,23 @@ export function ItineraryForm() {
     updateDay(dayIndex, 'images', images);
   };
 
+  const handleAttractionImageUpload = async (dayIndex: number, file: File) => {
+    try {
+      const compressed = await compressImage(file);
+      const day = data.itineraries[dayIndex];
+      const attractionImages = [...(day.attractionImages || []), compressed];
+      updateDay(dayIndex, 'attractionImages', attractionImages);
+    } catch (err) {
+      console.error('景點特色圖片壓縮失敗', err);
+    }
+  };
+
+  const removeAttractionImage = (dayIndex: number, imgIndex: number) => {
+    const day = data.itineraries[dayIndex];
+    const attractionImages = (day.attractionImages || []).filter((_, i) => i !== imgIndex);
+    updateDay(dayIndex, 'attractionImages', attractionImages);
+  };
+
   const inputClassName = "w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all text-sm text-gray-700 placeholder:text-gray-300";
   const labelClassName = "block text-[11px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider";
 
@@ -130,9 +147,28 @@ export function ItineraryForm() {
                     <textarea
                       value={day.attractions || ''}
                       onChange={(e) => updateDay(index, 'attractions', e.target.value)}
-                      className={`${inputClassName} min-h-[60px] resize-y`}
+                      className={`${inputClassName} min-h-[60px] resize-y mb-2`}
                       placeholder="請輸入景點特色說明..."
                     />
+                    <div className="mt-2 space-y-1.5">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">特色圖片 ({(day.attractionImages || []).length} / 3)</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(day.attractionImages || []).map((img, imgIndex) => (
+                          <div key={imgIndex} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200 group/img shadow-sm hover:shadow-md transition-all">
+                            <img src={img} className="w-full h-full object-cover" alt={`Attraction ${imgIndex}`} />
+                            <button
+                              onClick={() => removeAttractionImage(index, imgIndex)}
+                              className="absolute top-1 right-1 bg-white/90 backdrop-blur-sm text-red-500 rounded-full p-1 shadow-sm opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-50"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                        {(day.attractionImages || []).length < 3 && (
+                          <DayImageUploader onUpload={(file) => handleAttractionImageUpload(index, file)} />
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
                     {['breakfast', 'lunch', 'dinner'].map((meal) => (
