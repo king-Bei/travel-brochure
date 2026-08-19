@@ -26,13 +26,12 @@ function PageLoader() {
 }
 
 function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: string, currentUser: User | null, onBackToDashboard: () => void }) {
-  const { data, markSaved, setSaveInProgress } = useBrochure();
+  const { data, markSaved, beginSave, finishSave } = useBrochure();
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [lastSaved, setLastSaved] = useState<Date>(new Date());
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [hasConflict, setHasConflict] = useState(false);
   const isFirstMount = React.useRef(true);
-  const saveInFlightRef = useRef(false);
   const [syncToast, setSyncToast] = useState<{ show: boolean; editor: string }>({ show: false, editor: '' });
 
   const lastSavedDataRef = useRef<string>(JSON.stringify(data));
@@ -99,9 +98,8 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
 
     setSaveStatus('unsaved');
     const timer = setTimeout(async () => {
-      if (saveInFlightRef.current) return;
-      saveInFlightRef.current = true;
-      setSaveInProgress(true);
+      // 自動與手動存檔共用同一把鎖，避免兩個 CAS 請求拿同一版號互撞。
+      if (!beginSave()) return;
       setSaveStatus('saving');
       const snapshot = structuredClone(data);
       try {
@@ -124,13 +122,12 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
           setSaveStatus('unsaved');
         }
       } finally {
-        saveInFlightRef.current = false;
-        setSaveInProgress(false);
+        finishSave();
       }
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [data, currentId, hasConflict, markSaved, setSaveInProgress]);
+  }, [data, currentId, hasConflict, markSaved, beginSave, finishSave]);
 
   // 實時在線 Presence 監聽
   useEffect(() => {

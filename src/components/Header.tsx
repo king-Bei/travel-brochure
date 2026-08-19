@@ -21,7 +21,7 @@ export function Header({
     saveStatus?: 'saved' | 'saving' | 'unsaved',
     onlineUsers?: string[]
 }) {
-    const { data, updateData, markSaved, setSaveInProgress } = useBrochure();
+    const { data, updateData, markSaved, beginSave, finishSave } = useBrochure();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -182,7 +182,6 @@ export function Header({
 
     const startCloudSaveSync = async () => {
         setIsConfirmingSave(false);
-        setIsSavingCloud(true);
 
         const urlParams = new URLSearchParams(window.location.search);
         const existingId = currentId || urlParams.get('id');
@@ -192,18 +191,19 @@ export function Header({
             return;
         }
 
+        if (!beginSave()) {
+            setLogs([{ id: 'save-in-progress', message: '自動存檔正在完成，請稍候再試。', level: 'info', timestamp: new Date() }]);
+            return;
+        }
+        setIsSavingCloud(true);
+
         try {
             const dataToSave = { ...data };
-            setSaveInProgress(true);
             const result = await storage.saveBrochure(existingId, dataToSave);
 
             if (result.success) {
                 markSaved(dataToSave, result.serverUpdatedAt);
                 setLogs([{ id: '1', message: '儲存成功', level: 'success', timestamp: new Date() }]);
-                // 更新 Context 中的時間戳，以便下次儲存
-                if (data.serverUpdatedAt) {
-                    updateData({ serverUpdatedAt: data.serverUpdatedAt });
-                }
             } else if (result.error === 'CONFLICT') {
                 setLogs([{
                     id: 'err-conflict',
@@ -219,7 +219,7 @@ export function Header({
             console.error('儲存失敗:', error);
             setLogs([{ id: 'err', message: error.message || '儲存失敗，請檢查網路連線', level: 'error', timestamp: new Date() }]);
         } finally {
-            setSaveInProgress(false);
+            finishSave();
             setIsSavingCloud(false);
         }
     };
@@ -282,8 +282,10 @@ export function Header({
     };
 
     const handleExport = () => {
-        // 建立可下載的 JSON 字串
-        const dataStr = JSON.stringify(data, null, 2);
+        // serverUpdatedAt 只屬於目前雲端紀錄，不能帶進可攜式草稿。
+        const exportableData = { ...data };
+        delete exportableData.serverUpdatedAt;
+        const dataStr = JSON.stringify(exportableData, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
 
         const now = new Date();
@@ -318,7 +320,9 @@ export function Header({
 
                 // 基本的結構驗證 (檢查是否有必要的欄位)
                 if (importedData && typeof importedData === 'object' && 'itineraries' in importedData && 'theme' in importedData) {
-                    updateData(importedData);
+                    // 匯入的是內容，不是來源手冊的雲端版本；保留目前紀錄的 CAS 時間戳。
+                    const importedContent = { ...importedData, serverUpdatedAt: data.serverUpdatedAt };
+                    updateData(importedContent);
                     alert('資料匯入成功！');
                 } else {
                     alert('匯入失敗：檔案格式不正確或缺少必要資料。');

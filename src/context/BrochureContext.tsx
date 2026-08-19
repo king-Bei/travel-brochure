@@ -15,7 +15,8 @@ interface BrochureContextType {
   data: BrochureData;
   updateData: (updates: Partial<BrochureData>) => void;
   markSaved: (savedData: BrochureData, serverUpdatedAt?: string) => void;
-  setSaveInProgress: (saving: boolean) => void;
+  beginSave: () => boolean;
+  finishSave: () => void;
   setTheme: (theme: ThemeColors | keyof typeof themes) => void;
   addPackingItem: (text: string, important: boolean) => void;
   removePackingItem: (index: number) => void;
@@ -112,8 +113,14 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
     });
   }, []);
 
-  const setSaveInProgress = useCallback((saving: boolean) => {
-    saveInProgressRef.current = saving;
+  const beginSave = useCallback(() => {
+    if (saveInProgressRef.current) return false;
+    saveInProgressRef.current = true;
+    return true;
+  }, []);
+
+  const finishSave = useCallback(() => {
+    saveInProgressRef.current = false;
   }, []);
 
   const setTheme = (theme: ThemeColors | keyof typeof themes) => {
@@ -247,7 +254,7 @@ export function BrochureProvider({ children, initialData }: { children: ReactNod
   }, [brochureId]);
 
   return (
-    <BrochureContext.Provider value={{ data, updateData, markSaved, setSaveInProgress, setTheme, addPackingItem, removePackingItem, updatePageSetting }}>
+    <BrochureContext.Provider value={{ data, updateData, markSaved, beginSave, finishSave, setTheme, addPackingItem, removePackingItem, updatePageSetting }}>
       {children}
     </BrochureContext.Provider>
   );
