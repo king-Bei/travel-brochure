@@ -191,6 +191,7 @@ export interface BrochureData {
   tourLeaderPhone: string;
   meetingPoint: string;
   meetingTime: string;
+  meetingInfos?: MeetingInfo[];
   meetingMap?: string; // 機場集合地點地圖圖片
   emergencyContact?: string; // 緊急聯絡人
   emergencyPhone?: string; // 緊急聯絡電話
@@ -245,6 +246,12 @@ export interface BrochureData {
   isClosed?: boolean;           // 新增：是否已結案 (平常隱藏)
   passwordHash?: string;        // 新增：閱讀密碼雜湊值
   source?: 'editor' | 'pdf';    // 新增：來源分類 (手冊編輯器 or PDF上傳)
+}
+
+export interface MeetingInfo {
+  id: string;
+  point: string;
+  time: string;
 }
 
 export interface User {
@@ -386,6 +393,7 @@ export function createDefaultData(): BrochureData {
     tourLeaderPhone: '',
     meetingPoint: '',
     meetingTime: '',
+    meetingInfos: [],
     meetingMap: '',
     emergencyContact: '',
     emergencyPhone: '',

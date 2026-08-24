@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useBrochure } from '../../context/BrochureContext';
 import { Plane, MapPin, Users, Clock, Phone, AlertCircle } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
-import { FlightInfo } from '../../types';
+import { FlightInfo, MeetingInfo } from '../../types';
 
 export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 'meeting' }) {
   const { data } = useBrochure();
@@ -21,6 +21,14 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
     }
     return [];
   }, [data.flights]);
+
+  const meetingInfos = useMemo<MeetingInfo[]>(() => {
+    if (data.meetingInfos?.length) return data.meetingInfos.filter(item => item.point || item.time);
+    if (data.meetingPoint || data.meetingTime) {
+      return [{ id: 'legacy-meeting', point: data.meetingPoint || '', time: data.meetingTime || '' }];
+    }
+    return [];
+  }, [data.meetingInfos, data.meetingPoint, data.meetingTime]);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -112,19 +120,23 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
   const meetingSectionContent = (
     <div className="space-y-2">
       {/* 集合資訊卡片 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
-            <MapPin size={10} /> 集合地點
-          </p>
-          <p className="dynamic-text font-bold text-gray-800 leading-tight">{data.meetingPoint || '請洽旅行社確認'}</p>
-        </div>
-        <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
-            <Clock size={10} /> 集合時間
-          </p>
-          <p className="dynamic-text text-lg font-black leading-none" style={{ color: data.theme.primary }}>{data.meetingTime || '--:--'}</p>
-        </div>
+      <div className="space-y-2">
+        {(meetingInfos.length ? meetingInfos : [{ id: 'empty', point: '請洽旅行社確認', time: '--:--' }]).map((meeting, index) => (
+          <div key={meeting.id} className="grid grid-cols-[1fr_110px] gap-2">
+            <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center min-w-0">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
+                <MapPin size={10} /> 集合地點 {meetingInfos.length > 1 ? index + 1 : ''}
+              </p>
+              <p className="dynamic-text font-bold text-gray-800 leading-tight break-words">{meeting.point || '請洽旅行社確認'}</p>
+            </div>
+            <div className="bg-gray-50/80 p-2 rounded-lg border border-gray-100 flex flex-col justify-center">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0 flex items-center gap-1">
+                <Clock size={10} /> 集合時間
+              </p>
+              <p className="dynamic-text font-black leading-none" style={{ color: data.theme.primary }}>{meeting.time || '--:--'}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* 旅行社與緊急聯絡資訊 */}
@@ -181,7 +193,7 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
     </div>
   );
 
-  const hasMeetingInfo = !!(data.meetingPoint || data.meetingTime || data.tourLeader || data.agencyName || data.meetingMap);
+  const hasMeetingInfo = !!(meetingInfos.length || data.tourLeader || data.agencyName || data.meetingMap);
 
   const meetingSection = hasMeetingInfo ? (
     <div className="mt-2 pt-2 border-t border-dashed border-gray-200">

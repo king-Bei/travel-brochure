@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import { useBrochure } from '../../context/BrochureContext';
 import { Plane, ImagePlus, Trash2, Plus, ArrowDown, ChevronUp, ChevronDown, Map, Phone } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
-import { FlightInfo } from '../../types';
+import { FlightInfo, MeetingInfo } from '../../types';
 import { compressImage } from '../../lib/imageUtils';
 import { SectionSettings } from './SectionSettings';
 
@@ -13,6 +13,37 @@ export function FlightForm() {
     if (Array.isArray(data.flights)) return data.flights;
     return [];
   }, [data.flights]);
+
+  const meetingInfos = useMemo<MeetingInfo[]>(() => {
+    if (data.meetingInfos?.length) return data.meetingInfos;
+    if (data.meetingPoint || data.meetingTime) {
+      return [{ id: 'legacy-meeting', point: data.meetingPoint || '', time: data.meetingTime || '' }];
+    }
+    return [];
+  }, [data.meetingInfos, data.meetingPoint, data.meetingTime]);
+
+  const saveMeetingInfos = (items: MeetingInfo[]) => {
+    updateData({
+      meetingInfos: items,
+      meetingPoint: items[0]?.point || '',
+      meetingTime: items[0]?.time || '',
+    });
+  };
+
+  const addMeetingInfo = () => {
+    if (meetingInfos.length >= 6) return;
+    saveMeetingInfos([...meetingInfos, { id: crypto.randomUUID(), point: '', time: '' }]);
+  };
+
+  const updateMeetingInfo = (index: number, field: 'point' | 'time', value: string) => {
+    saveMeetingInfos(meetingInfos.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const removeMeetingInfo = (index: number) => {
+    saveMeetingInfos(meetingInfos.filter((_, itemIndex) => itemIndex !== index));
+  };
 
   const updateSegment = (index: number, field: keyof FlightInfo, value: any) => {
     const newFlights = [...flights];
@@ -117,31 +148,52 @@ export function FlightForm() {
         )}
 
         <div className="pt-6 border-t border-gray-100">
-          <h4 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-            <Map size={16} className="text-blue-500" />
-            機場集合資訊
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className={labelClassName}>集合地點</label>
-              <input
-                type="text"
-                value={data.meetingPoint || ''}
-                onChange={(e) => updateData({ meetingPoint: e.target.value })}
-                className={inputClassName}
-                placeholder="例如：桃園機場第一航廈 3F 華航櫃檯"
-              />
-            </div>
-            <div>
-              <label className={labelClassName}>集合時間</label>
-              <input
-                type="text"
-                value={data.meetingTime || ''}
-                onChange={(e) => updateData({ meetingTime: e.target.value })}
-                className={inputClassName}
-                placeholder="例如：10:30"
-              />
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+              <Map size={16} className="text-blue-500" />
+              機場集合資訊
+            </h4>
+            <button
+              onClick={addMeetingInfo}
+              disabled={meetingInfos.length >= 6}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-bold hover:bg-blue-100 disabled:opacity-40"
+            >
+              <Plus size={14} /> 新增集合資訊
+            </button>
+          </div>
+          <div className="space-y-3 mb-4">
+            {meetingInfos.map((meeting, index) => (
+              <div key={meeting.id} className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-3 items-end p-3 bg-white border border-gray-100 rounded-xl">
+                <div>
+                  <label className={labelClassName}>集合地點 {index + 1}</label>
+                  <input
+                    type="text"
+                    value={meeting.point}
+                    onChange={(e) => updateMeetingInfo(index, 'point', e.target.value)}
+                    className={inputClassName}
+                    placeholder="例如：桃園機場第一航廈 3F 華航櫃檯"
+                  />
+                </div>
+                <div>
+                  <label className={labelClassName}>集合時間</label>
+                  <input
+                    type="text"
+                    value={meeting.time}
+                    onChange={(e) => updateMeetingInfo(index, 'time', e.target.value)}
+                    className={inputClassName}
+                    placeholder="例如：10:30"
+                  />
+                </div>
+                <button onClick={() => removeMeetingInfo(index)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="刪除此集合資訊">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {meetingInfos.length === 0 && (
+              <button onClick={addMeetingInfo} className="w-full py-5 border-2 border-dashed border-gray-200 rounded-xl text-xs font-bold text-gray-400 hover:border-blue-200 hover:text-blue-500">
+                ＋ 新增第一筆集合時間與地點
+              </button>
+            )}
           </div>
 
           <label className={labelClassName}>集合地點地圖</label>
