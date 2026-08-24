@@ -120,7 +120,7 @@ export function ItineraryPage() {
                               'grid-cols-3'
                             }`}>
                               {day.attractionImages.map((img: string, imgIndex: number) => (
-                                <div key={imgIndex} className="relative aspect-video">
+                                <div key={imgIndex} className="relative dynamic-img-aspect-attraction">
                                   <img
                                     src={img}
                                     alt={`Attraction feature ${imgIndex}`}

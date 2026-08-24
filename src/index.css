@@ -275,6 +275,7 @@ body {
 .dynamic-img-h-hotel-main { height: calc(140px * var(--image-height-scale, 1.0)) !important; }
 .dynamic-img-h-hotel-sub { height: calc(90px * var(--image-height-scale, 1.0)) !important; }
 .dynamic-img-aspect { padding-top: calc(50% * var(--image-height-scale, 1.0)) !important; }
+.dynamic-img-aspect-attraction { padding-top: calc(56.25% * var(--image-height-scale, 1.0)) !important; }
 .dynamic-img-aspect-hotel { padding-bottom: calc(60% * var(--image-height-scale, 1.0)) !important; }
 .dynamic-img-max-h-24 { max-height: calc(6rem * var(--image-height-scale, 1.0)) !important; }
 .dynamic-img-h-airport-map { max-height: calc(140px * var(--image-height-scale, 1.0)) !important; }
