@@ -252,6 +252,10 @@ export interface MeetingInfo {
   id: string;
   point: string;
   time: string;
+  people?: string;
+  contactName?: string;
+  contactPhone?: string;
+  map?: string;
 }
 
 export interface User {

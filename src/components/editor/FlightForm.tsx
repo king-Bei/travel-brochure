@@ -15,27 +15,32 @@ export function FlightForm() {
   }, [data.flights]);
 
   const meetingInfos = useMemo<MeetingInfo[]>(() => {
-    if (data.meetingInfos?.length) return data.meetingInfos;
-    if (data.meetingPoint || data.meetingTime) {
-      return [{ id: 'legacy-meeting', point: data.meetingPoint || '', time: data.meetingTime || '' }];
+    if (data.meetingInfos?.length) {
+      return data.meetingInfos.map((item, index) =>
+        index === 0 && !item.map && data.meetingMap ? { ...item, map: data.meetingMap } : item
+      );
+    }
+    if (data.meetingPoint || data.meetingTime || data.meetingMap) {
+      return [{ id: 'legacy-meeting', point: data.meetingPoint || '', time: data.meetingTime || '', map: data.meetingMap || '' }];
     }
     return [];
-  }, [data.meetingInfos, data.meetingPoint, data.meetingTime]);
+  }, [data.meetingInfos, data.meetingPoint, data.meetingTime, data.meetingMap]);
 
   const saveMeetingInfos = (items: MeetingInfo[]) => {
     updateData({
       meetingInfos: items,
       meetingPoint: items[0]?.point || '',
       meetingTime: items[0]?.time || '',
+      meetingMap: items[0]?.map || '',
     });
   };
 
   const addMeetingInfo = () => {
     if (meetingInfos.length >= 6) return;
-    saveMeetingInfos([...meetingInfos, { id: crypto.randomUUID(), point: '', time: '' }]);
+    saveMeetingInfos([...meetingInfos, { id: crypto.randomUUID(), point: '', time: '', people: '', contactName: '', contactPhone: '', map: '' }]);
   };
 
-  const updateMeetingInfo = (index: number, field: 'point' | 'time', value: string) => {
+  const updateMeetingInfo = (index: number, field: 'point' | 'time' | 'people' | 'contactName' | 'contactPhone' | 'map', value: string) => {
     saveMeetingInfos(meetingInfos.map((item, itemIndex) =>
       itemIndex === index ? { ...item, [field]: value } : item
     ));
@@ -43,6 +48,15 @@ export function FlightForm() {
 
   const removeMeetingInfo = (index: number) => {
     saveMeetingInfos(meetingInfos.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const handleMeetingMapUpload = async (index: number, file: File) => {
+    try {
+      const compressed = await compressImage(file);
+      updateMeetingInfo(index, 'map', compressed);
+    } catch (err) {
+      console.error('集合地圖壓縮失敗', err);
+    }
   };
 
   const updateSegment = (index: number, field: keyof FlightInfo, value: any) => {
@@ -89,15 +103,6 @@ export function FlightForm() {
       updateSegment(index, 'airlineLogo', compressed);
     } catch (err) {
       console.error('Logo 壓縮失敗', err);
-    }
-  };
-
-  const handleMapUpload = async (file: File) => {
-    try {
-      const compressed = await compressImage(file);
-      updateData({ meetingMap: compressed });
-    } catch (err) {
-      console.error('地圖壓縮失敗', err);
     }
   };
 
@@ -187,22 +192,57 @@ export function FlightForm() {
                 <button onClick={() => removeMeetingInfo(index)} className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="刪除此集合資訊">
                   <Trash2 size={16} />
                 </button>
+                <div className="md:col-span-3">
+                  <label className={labelClassName}>集合人員</label>
+                  <input
+                    type="text"
+                    value={meeting.people || ''}
+                    onChange={(e) => updateMeetingInfo(index, 'people', e.target.value)}
+                    className={inputClassName}
+                    placeholder="例如：王小明、陳美麗／A 車旅客／自行前往人員"
+                  />
+                </div>
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClassName}>集合聯繫人</label>
+                    <input
+                      type="text"
+                      value={meeting.contactName || ''}
+                      onChange={(e) => updateMeetingInfo(index, 'contactName', e.target.value)}
+                      className={inputClassName}
+                      placeholder="例如：王領隊"
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClassName}>聯繫電話</label>
+                    <input
+                      type="tel"
+                      value={meeting.contactPhone || ''}
+                      onChange={(e) => updateMeetingInfo(index, 'contactPhone', e.target.value)}
+                      className={inputClassName}
+                      placeholder="例如：0912-345-678"
+                    />
+                  </div>
+                </div>
+                <div className="md:col-span-3">
+                  <label className={labelClassName}>此集合地點地圖</label>
+                  <MapUploader
+                    image={meeting.map}
+                    onUpload={(file: File) => handleMeetingMapUpload(index, file)}
+                    onRemove={() => updateMeetingInfo(index, 'map', '')}
+                    primaryColor={data.theme.primary}
+                    compact
+                  />
+                </div>
               </div>
             ))}
             {meetingInfos.length === 0 && (
               <button onClick={addMeetingInfo} className="w-full py-5 border-2 border-dashed border-gray-200 rounded-xl text-xs font-bold text-gray-400 hover:border-blue-200 hover:text-blue-500">
-                ＋ 新增第一筆集合時間與地點
+                ＋ 新增第一筆集合地點、時間與人員
               </button>
             )}
           </div>
 
-          <label className={labelClassName}>集合地點地圖</label>
-          <MapUploader
-            image={data.meetingMap}
-            onUpload={handleMapUpload}
-            onRemove={() => updateData({ meetingMap: '' })}
-            primaryColor={data.theme.primary}
-          />
         </div>
       </div>
     </div>
@@ -371,7 +411,7 @@ function SegmentEditor({
   );
 }
 
-function MapUploader({ image, onUpload, onRemove, primaryColor }: any) {
+function MapUploader({ image, onUpload, onRemove, primaryColor, compact = false }: any) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles[0]) onUpload(acceptedFiles[0]);
   }, [onUpload]);
@@ -394,7 +434,7 @@ function MapUploader({ image, onUpload, onRemove, primaryColor }: any) {
     <div
       {...getRootProps()}
       onPaste={handlePaste}
-      className={`relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all min-h-[200px] flex flex-col items-center justify-center overflow-hidden outline-none ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+      className={`relative border-2 border-dashed rounded-2xl text-center cursor-pointer transition-all flex flex-col items-center justify-center overflow-hidden outline-none ${compact ? 'min-h-[120px] p-4' : 'min-h-[200px] p-8'} ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
     >
       <input {...getInputProps()} />
       {image ? (
@@ -405,13 +445,13 @@ function MapUploader({ image, onUpload, onRemove, primaryColor }: any) {
           </div>
         </>
       ) : (
-        <div className="space-y-4">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
-            <ImagePlus className="text-blue-500" size={24} />
+        <div className={compact ? 'space-y-2' : 'space-y-4'}>
+          <div className={`${compact ? 'w-10 h-10' : 'w-16 h-16'} bg-blue-50 rounded-full flex items-center justify-center mx-auto`}>
+            <ImagePlus className="text-blue-500" size={compact ? 18 : 24} />
           </div>
           <div>
             <p className="text-sm font-bold text-gray-700">拖曳或點擊上傳集合地圖</p>
-            <p className="text-xs text-gray-400 mt-1">也可以直接使用 <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">Ctrl+V</kbd> 貼上圖片</p>
+            {!compact && <p className="text-xs text-gray-400 mt-1">也可以直接使用 <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">Ctrl+V</kbd> 貼上圖片</p>}
           </div>
         </div>
       )}

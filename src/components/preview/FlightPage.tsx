@@ -23,12 +23,16 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
   }, [data.flights]);
 
   const meetingInfos = useMemo<MeetingInfo[]>(() => {
-    if (data.meetingInfos?.length) return data.meetingInfos.filter(item => item.point || item.time);
-    if (data.meetingPoint || data.meetingTime) {
-      return [{ id: 'legacy-meeting', point: data.meetingPoint || '', time: data.meetingTime || '' }];
+    if (data.meetingInfos?.length) {
+      return data.meetingInfos
+        .map((item, index) => index === 0 && !item.map && data.meetingMap ? { ...item, map: data.meetingMap } : item)
+        .filter(item => item.point || item.time || item.people || item.contactName || item.contactPhone || item.map);
+    }
+    if (data.meetingPoint || data.meetingTime || data.meetingMap) {
+      return [{ id: 'legacy-meeting', point: data.meetingPoint || '', time: data.meetingTime || '', map: data.meetingMap || '' }];
     }
     return [];
-  }, [data.meetingInfos, data.meetingPoint, data.meetingTime]);
+  }, [data.meetingInfos, data.meetingPoint, data.meetingTime, data.meetingMap]);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -135,6 +139,31 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
               </p>
               <p className="dynamic-text font-black leading-none" style={{ color: data.theme.primary }}>{meeting.time || '--:--'}</p>
             </div>
+            {meeting.people && (
+              <div className="col-span-2 bg-blue-50/50 px-2 py-1.5 rounded-lg border border-blue-100/60 flex items-start gap-1.5">
+                <Users size={11} className="mt-1 flex-shrink-0" style={{ color: data.theme.primary }} />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">集合人員</p>
+                  <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">{meeting.people}</p>
+                </div>
+              </div>
+            )}
+            {(meeting.contactName || meeting.contactPhone) && (
+              <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
+                <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
+                <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
+                  {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
+                </p>
+              </div>
+            )}
+            {meeting.map && (
+              <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
+                <div className="bg-white rounded-lg overflow-hidden shadow-inner h-[90px]">
+                  <img src={meeting.map} alt={`集合地圖 ${index + 1}`} className="w-full h-full object-contain" />
+                </div>
+                <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -181,15 +210,6 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
         </div>
       </div>
 
-      {/* 地圖區域 */}
-      {data.meetingMap && (
-        <div className="bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
-          <div className="bg-white rounded-lg overflow-hidden shadow-inner">
-            <img src={data.meetingMap} alt="Airport Meeting Map" className="w-full h-auto dynamic-img-h-airport-map object-contain" />
-          </div>
-          <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">機場集合地圖</p>
-        </div>
-      )}
     </div>
   );
 

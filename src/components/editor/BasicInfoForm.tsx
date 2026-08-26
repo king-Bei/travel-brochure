@@ -319,30 +319,6 @@ export function BasicInfoForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className={labelClassName}>集合地點</label>
-            <input
-              type="text"
-              value={data.meetingPoint}
-              onChange={(e) => updateData({ meetingPoint: e.target.value })}
-              className={inputClassName}
-              placeholder="例如：桃園機場第一航廈"
-            />
-          </div>
-
-          <div>
-            <label className={labelClassName}>集合時間</label>
-            <input
-              type="text"
-              value={data.meetingTime}
-              onChange={(e) => updateData({ meetingTime: e.target.value })}
-              className={inputClassName}
-              placeholder="例如：10:30 (分區集合)"
-            />
-          </div>
-        </div>
-
         {/* 緊急聯絡資訊 */}
         <hr className="my-4 border-gray-100" />
         <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">

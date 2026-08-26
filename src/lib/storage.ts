@@ -117,47 +117,12 @@ export const storage = {
         }
     },
 
-    // 取得單一手冊內容（優化讀取速度：Stale-While-Revalidate 快取優先策略，秒開編輯器）
+    // 取得單一手冊內容：雲端優先，本地快取只作為離線備援。
     async getBrochure(id: string, includeImages: boolean = false): Promise<BrochureData | null> {
         try {
-            // 1. 優先從本地快取 (IndexedDB) 獲取，以達毫秒級極速回應
             const localData = await get(`${STORAGE_KEY_PREFIX}${id}`);
-            
-            // 2. 如果本地有快取，先非同步地在背景向雲端同步最新資料，但不阻塞主執行緒
-            if (localData) {
-                (async () => {
-                    if (!supabase) return;
-                    try {
-                        const selectFields = includeImages ? 'data, updated_at, published_images' : 'data, updated_at';
-                        const { data: cloudItem, error } = await supabase
-                            .from('brochures')
-                            .select(selectFields)
-                            .eq('id', id)
-                            .single();
-                        
-                        if (!error && cloudItem) {
-                            const item = cloudItem as any;
-                            const data = item.data as BrochureData;
-                            data.serverUpdatedAt = item.updated_at;
-                            
-                            if (includeImages && item.published_images) {
-                                data.publishedImages = item.published_images as string[];
-                            }
-                            
-                            // 更新本地快取，確保下次載入或後續儲存使用的是最新雲端時間戳
-                            await set(`${STORAGE_KEY_PREFIX}${id}`, data);
-                            console.log(`[背景同步] 手冊 ${id} 已同步至最新雲端狀態`);
-                        }
-                    } catch (err) {
-                        console.warn('[背景同步] 嘗試同步雲端失敗（可能是離線狀態）:', err);
-                    }
-                })();
-                
-                // 瞬間返回本地快取，免除網路延遲等待！
-                return localData;
-            }
 
-            // 3. 若本地完全無快取（例如首次從其他裝置載入），則必須阻塞等待雲端下載
+            // 可連線時必須先取得雲端最新版，並立即覆寫可能過期的 IndexedDB 快取。
             if (supabase) {
                 const selectFields = includeImages ? 'data, updated_at, published_images' : 'data, updated_at';
                 const { data: cloudItem, error } = await supabase
@@ -178,9 +143,13 @@ export const storage = {
                     await set(`${STORAGE_KEY_PREFIX}${id}`, data);
                     return data;
                 }
+
+                if (error) {
+                    console.warn(`[雲端同步] 手冊 ${id} 讀取失敗，改用本地離線備援:`, error.message);
+                }
             }
-            
-            return null;
+
+            return (localData as BrochureData | null) || null;
         } catch (error) {
             console.error('讀取手冊失敗：', error);
             return null;
