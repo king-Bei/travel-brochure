@@ -21,6 +21,7 @@ import type { SectionId } from '../../types';
 
 export function PreviewPanel() {
   const { data } = useBrochure();
+  const previewScrollRef = React.useRef<HTMLDivElement>(null);
 
   // ... (原本的 ALL_SECTION_IDS, currentOrder, visibleSections 邏輯保持不變)
   const ALL_SECTION_IDS: SectionId[] = [
@@ -78,9 +79,12 @@ export function PreviewPanel() {
   const visibleSections = currentOrder.filter(id => data.tocSettings?.[id] !== false);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(`preview-section-${id}`);
+    const targetId = id === 'flight' && (data.flights?.length || 0) > 3 ? 'flight-info' : id;
+    const element = previewScrollRef.current?.querySelector<HTMLElement>(`#preview-section-${targetId}`);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const container = previewScrollRef.current;
+      const top = element.offsetTop - 72;
+      container?.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
     }
   };
 
@@ -229,14 +233,16 @@ export function PreviewPanel() {
   return (
     <div className="relative h-full overflow-hidden bg-[#ccd5e0]">
       {/* 頂部快速導覽列 (Sticky Navigation) */}
-      <div className="absolute top-0 left-0 right-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200/50 flex items-center justify-center py-2 gap-1 px-4 overflow-x-auto no-print">
+      <div className="absolute top-0 left-0 right-0 z-50 pointer-events-auto bg-white/90 backdrop-blur-md border-b border-gray-200/50 flex items-center justify-start xl:justify-center py-2 gap-1 px-4 overflow-x-auto no-print">
         <button
+          type="button"
           onClick={() => scrollToSection('cover')}
           className="px-3 py-1.5 rounded-lg text-xs font-black text-gray-500 hover:bg-white hover:text-blue-600 transition-all hover:shadow-sm uppercase tracking-widest whitespace-nowrap"
         >
           {SECTION_LABELS.cover}
         </button>
         <button
+          type="button"
           onClick={() => scrollToSection('toc')}
           className="px-3 py-1.5 rounded-lg text-xs font-black text-gray-500 hover:bg-white hover:text-blue-600 transition-all hover:shadow-sm uppercase tracking-widest whitespace-nowrap"
         >
@@ -245,6 +251,7 @@ export function PreviewPanel() {
         <div className="w-px h-3 bg-gray-200 mx-1" />
         {visibleSections.map((sectionId) => (
           <button
+            type="button"
             key={sectionId}
             onClick={() => scrollToSection(sectionId)}
             className="px-3 py-1.5 rounded-lg text-xs font-black transition-all hover:bg-white hover:shadow-sm uppercase tracking-widest whitespace-nowrap"
@@ -259,7 +266,7 @@ export function PreviewPanel() {
       </div>
 
       {/* 螢幕預覽容器（列印時隱藏） */}
-      <div className="h-full overflow-y-auto pt-20 p-12 custom-scrollbar no-print">
+      <div ref={previewScrollRef} className="relative z-0 h-full overflow-y-auto pt-20 p-12 custom-scrollbar no-print">
         <div className="preview-container flex flex-col items-center gap-16 pb-32">
           {pages.map((page, index) => (
             <PageContainer key={page.id} id={page.id} title={page.title}>

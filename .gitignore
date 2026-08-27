@@ -25,6 +25,8 @@ dist-ssr
 .env
 .env.local
 users_rows.sql
+spreadsheet_work/
+
 
 
 

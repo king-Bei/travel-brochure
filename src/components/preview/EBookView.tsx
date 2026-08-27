@@ -524,7 +524,8 @@ export function EBookView() {
     <div className="fixed inset-0 bg-[#12100a] flex flex-col overflow-hidden select-none perspective-2000">
       {/* 頂部工具列 */}
       <div 
-        className={`h-14 bg-[#1e1a10]/90 backdrop-blur-xl flex items-center justify-between px-6 z-50 border-b border-[#c8a96e]/10 transition-all duration-500 ${isUIHidden ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}
+        onClick={(event) => event.stopPropagation()}
+        className={`relative z-[70] h-14 shrink-0 pointer-events-auto bg-[#1e1a10]/90 backdrop-blur-xl flex items-center justify-between px-3 sm:px-6 border-b border-[#c8a96e]/10 transition-all duration-500 ${isUIHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
       >
         <div className="flex items-center gap-3">
           <div className="h-9 min-w-9 rounded-xl border border-[#c8a96e]/20 bg-white/[0.04] px-2 flex items-center justify-center shadow-lg">
@@ -628,7 +629,7 @@ export function EBookView() {
           onClick={() => setIsUIHidden(!isUIHidden)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 min-h-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar bg-[radial-gradient(ellipse_at_center,#1e1a10_0%,#12100a_70%)] cursor-pointer"
+          className="relative z-0 flex-1 min-h-0 flex overflow-x-auto snap-x snap-mandatory no-scrollbar bg-[radial-gradient(ellipse_at_center,#1e1a10_0%,#12100a_70%)] cursor-pointer"
           style={{ scrollBehavior: isFlipping ? 'auto' : 'smooth' }}
         >
           {isDoublePage ? (
@@ -754,7 +755,7 @@ export function EBookView() {
       )}
 
       {/* 底部導覽列 */}
-      <div className={`h-20 bg-[#1e1a10]/90 backdrop-blur-xl flex flex-col items-center justify-center px-6 z-40 border-t border-[#c8a96e]/10 space-y-2 transition-all duration-500 ${isUIHidden ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
+      <div className={`relative z-[70] h-20 shrink-0 bg-[#1e1a10]/90 backdrop-blur-xl flex flex-col items-center justify-center px-6 border-t border-[#c8a96e]/10 space-y-2 transition-all duration-500 ${isUIHidden ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
         <div className="flex items-center gap-10 md:gap-16 text-white/80">
           <button 
             onClick={prevPage}

@@ -158,8 +158,19 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
             )}
             {meeting.map && (
               <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
-                <div className="bg-white rounded-lg overflow-hidden shadow-inner h-[90px]">
-                  <img src={meeting.map} alt={`集合地圖 ${index + 1}`} className="w-full h-full object-contain" />
+                <div
+                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center"
+                  style={{
+                    height: subPage === 'meeting'
+                      ? meetingInfos.length <= 1 ? '220px' : meetingInfos.length === 2 ? '150px' : '100px'
+                      : '90px'
+                  }}
+                >
+                  <img
+                    src={meeting.map}
+                    alt={`集合地圖 ${index + 1}`}
+                    className="block max-w-full max-h-full w-auto h-auto object-contain"
+                  />
                 </div>
                 <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
               </div>
