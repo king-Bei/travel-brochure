@@ -80,7 +80,9 @@ export interface Attraction {
   country?: string; // 修正：景點國家資料
   pageBreakAfter?: boolean; // 景點手動分頁
   isTwoPerPage?: boolean; // 新增：是否一頁兩個景點
+  imageScale?: number; // 新增：圖片顯示大小比例 (0.8 ~ 1.5)
 }
+
 
 export interface HotelDetail {
   id: string;

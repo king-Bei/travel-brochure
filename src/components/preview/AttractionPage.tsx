@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useBrochure } from '../../context/BrochureContext';
-import { Camera } from 'lucide-react';
+import { Camera, ZoomIn, X } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import { Attraction } from '../../types';
 import { getAttractionPages } from '../../lib/pagination';
@@ -8,27 +8,42 @@ import { parseRichText } from '../../lib/textParser';
 
 export function AttractionPage() {
     const { data } = useBrochure();
+    const [previewImage, setPreviewImage] = useState<{ src: string; title?: string } | null>(null);
     const attractions = data.attractions || [];
     if (attractions.length === 0) return null;
 
     const renderLayout = (attraction: Attraction, isCompact: boolean = false) => {
-        const { images, layout } = attraction;
+        const { images, layout, imageScale = 1.0 } = attraction;
         const imgCount = images.length;
 
         if (imgCount === 0) return null;
 
-        // 在一頁兩個景點的模式下，改用 flex-1 min-h-0 讓它自適應填滿剩餘空間，而不是固定鎖死 160px
-        const heightClass = isCompact ? "flex-1 min-h-0" : "max-h-[200px] flex-grow";
+        // 計算自訂高度（根據 imageScale 0.8 ~ 1.5 微調）
+        const maxHeightPx = Math.round(200 * imageScale);
+        const heightClass = isCompact ? "flex-1 min-h-0" : "flex-grow";
+        const heightStyle = isCompact ? {} : { maxHeight: `${maxHeightPx}px` };
+
+        const ImageItem = ({ src, className = "" }: { src: string; className?: string }) => (
+            <div
+                onClick={() => setPreviewImage({ src, title: attraction.title })}
+                className={`rounded-xl overflow-hidden relative cursor-pointer group/img ${className}`}
+            >
+                <img src={src} className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105" alt="" />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="bg-white/90 text-gray-800 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-md">
+                        <ZoomIn size={12} /> 放大地圖 / 圖片
+                    </span>
+                </div>
+            </div>
+        );
 
         if (layout === 'top-1-bottom-2' || (imgCount === 3 && layout !== 'left-1-right-2')) {
             return (
-                <div className={`flex flex-col gap-2 min-h-[120px] ${heightClass} mt-3`}>
-                    <div className="h-2/3 rounded-xl overflow-hidden relative">
-                        <img src={images[0]} className="w-full h-full object-cover" alt="" />
-                    </div>
+                <div className={`flex flex-col gap-2 min-h-[120px] ${heightClass} mt-3`} style={heightStyle}>
+                    <ImageItem src={images[0]} className="h-2/3" />
                     <div className="h-1/3 flex gap-2">
-                        {images[1] && <div className="flex-1 rounded-xl overflow-hidden relative"><img src={images[1]} className="w-full h-full object-cover" alt="" /></div>}
-                        {images[2] && <div className="flex-1 rounded-xl overflow-hidden relative"><img src={images[2]} className="w-full h-full object-cover" alt="" /></div>}
+                        {images[1] && <ImageItem src={images[1]} className="flex-1" />}
+                        {images[2] && <ImageItem src={images[2]} className="flex-1" />}
                     </div>
                 </div>
             );
@@ -36,13 +51,11 @@ export function AttractionPage() {
 
         if (layout === 'left-1-right-2' || imgCount === 3) {
             return (
-                <div className={`flex gap-2 min-h-[80px] ${heightClass} mt-3`}>
-                    <div className="w-2/3 rounded-xl overflow-hidden relative">
-                        <img src={images[0]} className="w-full h-full object-cover" alt="" />
-                    </div>
+                <div className={`flex gap-2 min-h-[80px] ${heightClass} mt-3`} style={heightStyle}>
+                    <ImageItem src={images[0]} className="w-2/3" />
                     <div className="w-1/3 flex flex-col gap-2">
-                        {images[1] && <div className="flex-1 rounded-xl overflow-hidden relative"><img src={images[1]} className="w-full h-full object-cover" alt="" /></div>}
-                        {images[2] && <div className="flex-1 rounded-xl overflow-hidden relative"><img src={images[2]} className="w-full h-full object-cover" alt="" /></div>}
+                        {images[1] && <ImageItem src={images[1]} className="flex-1" />}
+                        {images[2] && <ImageItem src={images[2]} className="flex-1" />}
                     </div>
                 </div>
             );
@@ -50,46 +63,55 @@ export function AttractionPage() {
 
         if (layout === 'grid-4' || imgCount >= 4) {
             return (
-                <div className={`grid grid-cols-2 gap-2 min-h-[80px] ${heightClass} mt-3`}>
+                <div className={`grid grid-cols-2 gap-2 min-h-[80px] ${heightClass} mt-3`} style={heightStyle}>
                     {images.slice(0, 4).map((img, idx) => (
-                        <div key={idx} className="rounded-xl overflow-hidden relative">
-                            <img src={img} className="w-full h-full object-cover" alt="" />
-                        </div>
+                        <ImageItem key={idx} src={img} />
                     ))}
                 </div>
             );
         }
 
         return (
-            <div className={`min-h-[80px] ${heightClass} mt-3 rounded-xl overflow-hidden relative`}>
-                <img src={images[0]} className="w-full h-full object-cover" alt="" />
+            <div className={`min-h-[80px] ${heightClass} mt-3`} style={heightStyle}>
+                <ImageItem src={images[0]} className="w-full h-full" />
             </div>
         );
     };
 
     const renderSideImage = (attraction: Attraction, isCompact: boolean = false) => {
-        const { images } = attraction;
+        const { images, imageScale = 1.0 } = attraction;
         if (!images || images.length === 0) return null;
-        
-        const heightClass = isCompact ? "flex-1 min-h-0" : "flex-1 min-h-[140px]";
-        
-        // 如果有 2 張以上的圖片，且處於非緊湊模式下，可以顯示一個雙圖垂直排列
+
+        const baseMinHeight = Math.round(140 * imageScale);
+        const heightClass = isCompact ? "flex-1 min-h-0" : "flex-1";
+        const heightStyle = isCompact ? {} : { minHeight: `${baseMinHeight}px` };
+
+        const SideImageItem = ({ src, className = "" }: { src: string; className?: string }) => (
+            <div
+                onClick={() => setPreviewImage({ src, title: attraction.title })}
+                className={`rounded-xl overflow-hidden relative cursor-pointer group/img ${className}`}
+            >
+                <img src={src} className="w-full h-full object-cover absolute inset-0 transition-transform duration-300 group-hover/img:scale-105" alt="" />
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="bg-white/90 text-gray-800 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-md">
+                        <ZoomIn size={12} /> 放大圖片
+                    </span>
+                </div>
+            </div>
+        );
+
         if (images.length >= 2 && !isCompact) {
             return (
                 <div className="flex flex-col gap-2 h-full py-1">
-                    <div className="flex-1 rounded-xl overflow-hidden relative min-h-[70px]">
-                        <img src={images[0]} className="w-full h-full object-cover absolute inset-0" alt="" />
-                    </div>
-                    <div className="flex-1 rounded-xl overflow-hidden relative min-h-[70px]">
-                        <img src={images[1]} className="w-full h-full object-cover absolute inset-0" alt="" />
-                    </div>
+                    <SideImageItem src={images[0]} className="flex-1 min-h-[70px]" />
+                    <SideImageItem src={images[1]} className="flex-1 min-h-[70px]" />
                 </div>
             );
         }
 
         return (
-            <div className={`w-full ${heightClass} rounded-xl overflow-hidden relative`}>
-                <img src={images[0]} className="w-full h-full object-cover absolute inset-0" alt="" />
+            <div className={`w-full ${heightClass}`} style={heightStyle}>
+                <SideImageItem src={images[0]} className="w-full h-full" />
             </div>
         );
     };
@@ -155,6 +177,37 @@ export function AttractionPage() {
                     </div>
                 </PageWrapper>
             ))}
+
+            {/* 景點大圖/地圖 Lightbox Modal */}
+            {previewImage && (
+                <div
+                    className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-pointer select-none"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <div
+                        className="relative max-w-5xl max-h-[90vh] bg-white/10 rounded-2xl p-2 border border-white/20 shadow-2xl flex flex-col items-center overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="w-full flex items-center justify-between px-3 py-2 text-white border-b border-white/10 mb-2">
+                            <span className="font-bold text-sm truncate">{previewImage.title || '景點地圖與照片'}</span>
+                            <button
+                                onClick={() => setPreviewImage(null)}
+                                className="p-1 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1 text-xs"
+                            >
+                                <X size={18} /> 關閉 (ESC)
+                            </button>
+                        </div>
+                        <div className="overflow-auto flex items-center justify-center max-h-[80vh] w-full p-2">
+                            <img
+                                src={previewImage.src}
+                                alt={previewImage.title || '景點大圖'}
+                                className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-lg"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
+

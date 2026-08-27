@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useBrochure } from '../../context/BrochureContext';
-import { Plane, MapPin, Users, Clock, Phone, AlertCircle } from 'lucide-react';
+import { Plane, MapPin, Users, Clock, Phone, AlertCircle, ZoomIn, X } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import { FlightInfo, MeetingInfo } from '../../types';
 
 export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 'meeting' }) {
   const { data } = useBrochure();
+  const [previewMap, setPreviewMap] = useState<{ src: string; title: string } | null>(null);
 
   // 1. Data Migration: 同步編輯器的邏輯，確保預覽也能顯示舊格式資料
   const flights = useMemo(() => {
@@ -159,7 +160,8 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
             {meeting.map && (
               <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
                 <div
-                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center"
+                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center cursor-pointer group/map relative"
+                  onClick={() => setPreviewMap({ src: meeting.map!, title: `集合地點 ${index + 1} 地圖` })}
                   style={{
                     height: subPage === 'meeting'
                       ? meetingInfos.length <= 1 ? '220px' : meetingInfos.length === 2 ? '150px' : '100px'
@@ -169,8 +171,13 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
                   <img
                     src={meeting.map}
                     alt={`集合地圖 ${index + 1}`}
-                    className="block max-w-full max-h-full w-auto h-auto object-contain"
+                    className="block max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover/map:scale-105"
                   />
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/map:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-md">
+                      <ZoomIn size={12} /> 點擊放大集合地圖
+                    </span>
+                  </div>
                 </div>
                 <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
               </div>
@@ -253,78 +260,97 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
     return groups.filter(g => g.segments.length > 0);
   }, [flights, data.theme.primary]);
 
-  // 針對 subPage === 'meeting'：獨立呈現集合資訊
-  if (subPage === 'meeting') {
-    return (
-      <PageWrapper sectionId="flight" title="集合資訊" icon={<Users size={18} />}>
-        <div className="flex-grow flex flex-col h-full justify-between">
-          {meetingSectionContent}
-        </div>
-      </PageWrapper>
-    );
-  }
-
-  // 針對無航班資料的情形
-  if (flights.length === 0) {
-    return (
-      <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={24} />}>
-        <div className="flex-grow flex flex-col">
-          <div className="flex-grow py-20 text-center opacity-20 italic font-medium">
-            暫無航班資訊，請洽旅行社確認。
-          </div>
-          {subPage === 'all' && meetingSection}
-        </div>
-      </PageWrapper>
-    );
-  }
-
-  // 針對 subPage === 'flights'：僅呈現航班列表
-  if (subPage === 'flights') {
-    return (
-      <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={18} />}>
-        <div className="flex-grow flex flex-col h-full">
-          <div className="space-y-4">
-            {groupedFlights.map((group, gIdx) => (
-              <div key={gIdx} className="space-y-2">
-                <div className="flex items-center gap-2 mb-1 px-1">
-                  <div className="w-1 h-3 rounded-full" style={{ backgroundColor: group.color }} />
-                  <h4 className="text-[11px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
-                </div>
-                <div className="space-y-2">
-                  {group.segments.map((flight, fIdx) => (
-                    <FlightCard key={fIdx} flight={flight} index={flights.indexOf(flight)} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </PageWrapper>
-    );
-  }
-
-  // 預設 (subPage === 'all')：在單頁同時呈現航班與集合資訊
   return (
-    <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={18} />}>
-      <div className="flex-grow flex flex-col h-full">
-        <div className="space-y-4">
-          {groupedFlights.map((group, gIdx) => (
-            <div key={gIdx} className="space-y-2">
-              <div className="flex items-center gap-2 mb-1 px-1">
-                <div className="w-1 h-3 rounded-full" style={{ backgroundColor: group.color }} />
-                <h4 className="text-[11px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
-              </div>
-              <div className="space-y-2">
-                {group.segments.map((flight, fIdx) => (
-                  <FlightCard key={fIdx} flight={flight} index={flights.indexOf(flight)} />
-                ))}
-              </div>
+    <>
+      {subPage === 'meeting' ? (
+        <PageWrapper sectionId="flight" title="集合資訊" icon={<Users size={18} />}>
+          <div className="flex-grow flex flex-col h-full justify-between">
+            {meetingSectionContent}
+          </div>
+        </PageWrapper>
+      ) : flights.length === 0 ? (
+        <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={24} />}>
+          <div className="flex-grow flex flex-col">
+            <div className="flex-grow py-20 text-center opacity-20 italic font-medium">
+              暫無航班資訊，請洽旅行社確認。
             </div>
-          ))}
-        </div>
+            {subPage === 'all' && meetingSection}
+          </div>
+        </PageWrapper>
+      ) : subPage === 'flights' ? (
+        <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={18} />}>
+          <div className="flex-grow flex flex-col h-full">
+            <div className="space-y-4">
+              {groupedFlights.map((group, gIdx) => (
+                <div key={gIdx} className="space-y-2">
+                  <div className="flex items-center gap-2 mb-1 px-1">
+                    <div className="w-1 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                    <h4 className="text-[11px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {group.segments.map((flight, fIdx) => (
+                      <FlightCard key={fIdx} flight={flight} index={flights.indexOf(flight)} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </PageWrapper>
+      ) : (
+        <PageWrapper sectionId="flight" title="航班資訊" icon={<Plane size={18} />}>
+          <div className="flex-grow flex flex-col h-full">
+            <div className="space-y-4">
+              {groupedFlights.map((group, gIdx) => (
+                <div key={gIdx} className="space-y-2">
+                  <div className="flex items-center gap-2 mb-1 px-1">
+                    <div className="w-1 h-3 rounded-full" style={{ backgroundColor: group.color }} />
+                    <h4 className="text-[11px] font-black uppercase tracking-wider" style={{ color: group.color }}>{group.label}</h4>
+                  </div>
+                  <div className="space-y-2">
+                    {group.segments.map((flight, fIdx) => (
+                      <FlightCard key={fIdx} flight={flight} index={flights.indexOf(flight)} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-        {meetingSection}
-      </div>
-    </PageWrapper>
+            {meetingSection}
+          </div>
+        </PageWrapper>
+      )}
+
+      {/* 集合地圖 Lightbox Modal */}
+      {previewMap && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-pointer select-none"
+          onClick={() => setPreviewMap(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-[90vh] bg-white/10 rounded-2xl p-2 border border-white/20 shadow-2xl flex flex-col items-center overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between px-3 py-2 text-white border-b border-white/10 mb-2">
+              <span className="font-bold text-sm truncate">{previewMap.title}</span>
+              <button
+                onClick={() => setPreviewMap(null)}
+                className="p-1 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1 text-xs"
+              >
+                <X size={18} /> 關閉 (ESC)
+              </button>
+            </div>
+            <div className="overflow-auto flex items-center justify-center max-h-[80vh] w-full p-2">
+              <img
+                src={previewMap.src}
+                alt={previewMap.title}
+                className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+

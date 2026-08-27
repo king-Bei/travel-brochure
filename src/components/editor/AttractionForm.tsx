@@ -475,7 +475,7 @@ export function AttractionForm() {
                                             placeholder="輸入景點的詳細介紹..."
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div>
                                             <label className={labelClassName}>版面配置</label>
                                             <select
@@ -489,6 +489,19 @@ export function AttractionForm() {
                                                 <option value="single">滿版單圖</option>
                                                 <option value="side-left">左圖右文 (圖小文多)</option>
                                                 <option value="side-right">左文右圖 (圖小文多)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className={labelClassName}>圖片/地圖大小</label>
+                                            <select
+                                                value={attraction.imageScale ?? 1.0}
+                                                onChange={(e) => updateAttraction(index, 'imageScale', parseFloat(e.target.value))}
+                                                className={inputClassName}
+                                            >
+                                                <option value="0.8">80% (精簡)</option>
+                                                <option value="1.0">100% (標準預設)</option>
+                                                <option value="1.2">120% (放大)</option>
+                                                <option value="1.5">150% (大型大圖)</option>
                                             </select>
                                         </div>
                                         <div>
@@ -521,6 +534,7 @@ export function AttractionForm() {
                                             </div>
                                         </div>
                                     </div>
+
 
                                     <div className="flex items-center gap-6 pt-2">
                                         <label className="flex items-center gap-2 cursor-pointer group">
