@@ -160,12 +160,16 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
             {meeting.map && (
               <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
                 <div
-                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center cursor-pointer group/map relative"
+                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center cursor-pointer group/map relative transition-all"
                   onClick={() => setPreviewMap({ src: meeting.map!, title: `集合地點 ${index + 1} 地圖` })}
                   style={{
-                    height: subPage === 'meeting'
-                      ? meetingInfos.length <= 1 ? '220px' : meetingInfos.length === 2 ? '150px' : '100px'
-                      : '90px'
+                    height: meeting.mapSize === 'small' ? '140px'
+                      : meeting.mapSize === 'medium' ? '200px'
+                      : meeting.mapSize === 'large' ? '280px'
+                      : meeting.mapSize === 'huge' ? '360px'
+                      : subPage === 'meeting'
+                        ? meetingInfos.length <= 1 ? '280px' : meetingInfos.length === 2 ? '200px' : '150px'
+                        : '160px'
                   }}
                 >
                   <img
@@ -174,14 +178,15 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
                     className="block max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover/map:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/map:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="bg-white/90 text-gray-800 text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-md">
-                      <ZoomIn size={12} /> 點擊放大集合地圖
+                    <span className="bg-white/90 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-md">
+                      <ZoomIn size={14} /> 點擊全螢幕放大地圖
                     </span>
                   </div>
                 </div>
                 <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
               </div>
             )}
+
           </div>
         ))}
       </div>

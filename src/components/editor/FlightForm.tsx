@@ -40,11 +40,12 @@ export function FlightForm() {
     saveMeetingInfos([...meetingInfos, { id: crypto.randomUUID(), point: '', time: '', people: '', contactName: '', contactPhone: '', map: '' }]);
   };
 
-  const updateMeetingInfo = (index: number, field: 'point' | 'time' | 'people' | 'contactName' | 'contactPhone' | 'map', value: string) => {
+  const updateMeetingInfo = (index: number, field: 'point' | 'time' | 'people' | 'contactName' | 'contactPhone' | 'map' | 'mapSize', value: string) => {
     saveMeetingInfos(meetingInfos.map((item, itemIndex) =>
       itemIndex === index ? { ...item, [field]: value } : item
     ));
   };
+
 
   const removeMeetingInfo = (index: number) => {
     saveMeetingInfos(meetingInfos.filter((_, itemIndex) => itemIndex !== index));
@@ -225,7 +226,24 @@ export function FlightForm() {
                   </div>
                 </div>
                 <div className="md:col-span-3">
-                  <label className={labelClassName}>此集合地點地圖</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className={labelClassName}>此集合地點地圖</label>
+                    {meeting.map && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-gray-400">地圖顯示尺寸：</span>
+                        <select
+                          value={meeting.mapSize || 'medium'}
+                          onChange={(e) => updateMeetingInfo(index, 'mapSize', e.target.value)}
+                          className="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-0.5 font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        >
+                          <option value="small">精簡 (140px)</option>
+                          <option value="medium">標準 (200px)</option>
+                          <option value="large">大型 (280px)</option>
+                          <option value="huge">超大滿版 (360px)</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
                   <MapUploader
                     image={meeting.map}
                     onUpload={(file: File) => handleMeetingMapUpload(index, file)}
@@ -234,6 +252,7 @@ export function FlightForm() {
                     compact
                   />
                 </div>
+
               </div>
             ))}
             {meetingInfos.length === 0 && (

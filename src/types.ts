@@ -258,7 +258,9 @@ export interface MeetingInfo {
   contactName?: string;
   contactPhone?: string;
   map?: string;
+  mapSize?: 'small' | 'medium' | 'large' | 'huge'; // 新增：集合地圖顯示大小
 }
+
 
 export interface User {
   id: number;
