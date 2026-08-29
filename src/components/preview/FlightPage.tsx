@@ -163,6 +163,19 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
                 </div>
               </div>
             )}
+            {(meeting.contactName || meeting.contactPhone) && (
+              <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
+                <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                    {meeting.isContactPerson ? '聯繫人' : '領隊'}
+                  </p>
+                  <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
+                    {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
+                  </p>
+                </div>
+              </div>
+            )}
             {meeting.map && (
               <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
                 <div
@@ -186,19 +199,6 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
                 <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
               </div>
             )}
-            {(groupIndex === undefined || meeting.isContactPerson) && (meeting.contactName || meeting.contactPhone) && (
-              <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
-                <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                    {meeting.isContactPerson ? '聯繫人' : '領隊'}
-                  </p>
-                  <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
-                    {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
-                  </p>
-                </div>
-              </div>
-            )}
 
           </div>
         ))}
@@ -212,7 +212,7 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 sm:gap-y-1 relative z-10">
           {/* 第一列：領隊 (單獨一列) */}
-          <div className="col-span-1 sm:col-span-2 pb-1 border-b border-gray-50 mb-0.5 grid grid-cols-2 gap-x-4">
+          {groupIndex === undefined && <div className="col-span-1 sm:col-span-2 pb-1 border-b border-gray-50 mb-0.5 grid grid-cols-2 gap-x-4">
             <div className="space-y-0.5">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">領隊</p>
               <p className="dynamic-text font-black text-gray-900 leading-none">{groupLeader || '敬請期待'}</p>
@@ -225,7 +225,7 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
                 </p>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* 第二列：旅行社 與 緊急聯繫人 */}
           <div className="space-y-0.5">

@@ -204,33 +204,6 @@ export function FlightForm() {
                     placeholder="例如：王小明、陳美麗／A 車旅客／自行前往人員"
                   />
                 </div>
-                <div className="md:col-span-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className={labelClassName}>此集合地點地圖</label>
-                    {meeting.map && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] font-bold text-gray-400">地圖顯示尺寸：</span>
-                        <select
-                          value={meeting.mapSize || 'medium'}
-                          onChange={(e) => updateMeetingInfo(index, 'mapSize', e.target.value)}
-                          className="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-0.5 font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        >
-                          <option value="small">精簡 (140px)</option>
-                          <option value="medium">標準 (200px)</option>
-                          <option value="large">大型 (280px)</option>
-                          <option value="huge">超大滿版 (360px)</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                  <MapUploader
-                    image={meeting.map}
-                    onUpload={(file: File) => handleMeetingMapUpload(index, file)}
-                    onRemove={() => updateMeetingInfo(index, 'map', '')}
-                    primaryColor={data.theme.primary}
-                    compact
-                  />
-                </div>
                 <div className="md:col-span-3 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
                   <div>
                     <p className="text-xs font-bold text-gray-700">人員身分</p>
@@ -267,6 +240,33 @@ export function FlightForm() {
                       placeholder="例如：0912-345-678"
                     />
                   </div>
+                </div>
+                <div className="md:col-span-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className={labelClassName}>此集合地點地圖</label>
+                    {meeting.map && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-gray-400">地圖顯示尺寸：</span>
+                        <select
+                          value={meeting.mapSize || 'medium'}
+                          onChange={(e) => updateMeetingInfo(index, 'mapSize', e.target.value)}
+                          className="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-0.5 font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        >
+                          <option value="small">精簡 (140px)</option>
+                          <option value="medium">標準 (200px)</option>
+                          <option value="large">大型 (280px)</option>
+                          <option value="huge">超大滿版 (360px)</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                  <MapUploader
+                    image={meeting.map}
+                    onUpload={(file: File) => handleMeetingMapUpload(index, file)}
+                    onRemove={() => updateMeetingInfo(index, 'map', '')}
+                    primaryColor={data.theme.primary}
+                    compact
+                  />
                 </div>
 
               </div>
