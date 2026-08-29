@@ -164,16 +164,26 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
               </div>
             )}
             {(meeting.contactName || meeting.contactPhone) && (
-              <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
-                <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
-                <div className="min-w-0">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                    {meeting.isContactPerson ? '聯繫人' : '領隊'}
-                  </p>
-                  <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
-                    {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
-                  </p>
+              <div className={`col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 grid gap-3 ${groupIndex !== undefined ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                      {meeting.isContactPerson ? '聯繫人' : '領隊'}
+                    </p>
+                    <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
+                      {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
+                    </p>
+                  </div>
                 </div>
+                {groupIndex !== undefined && (
+                  <div className="min-w-0 border-l border-gray-100 pl-3">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">緊急聯絡人</p>
+                    <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
+                      {[data.emergencyContactName || '值班人員', data.agencyMobile || data.emergencyPhone || data.agencyPhone].filter(Boolean).join('｜')}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             {meeting.map && (
@@ -205,7 +215,7 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
       </div>
 
       {/* 旅行社與緊急聯絡資訊 */}
-      <div className="bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden">
+      {groupIndex === undefined && <div className="bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-12 h-12 -mr-3 -mt-3 opacity-5" style={{ color: data.theme.primary }}>
           <Phone size={48} />
         </div>
@@ -244,7 +254,7 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
             </p>
           </div>
         </div>
-      </div>
+      </div>}
 
     </div>
   );
