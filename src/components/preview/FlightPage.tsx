@@ -46,8 +46,8 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
   const meetingInfos = groupIndex === undefined
     ? allMeetingInfos
     : allMeetingInfos.slice(groupIndex, groupIndex + 1);
-  const groupLeader = meetingInfos[0]?.contactName || data.tourLeader;
-  const groupLeaderPhone = meetingInfos[0]?.contactPhone || data.tourLeaderPhone;
+  const groupLeader = !meetingInfos[0]?.isContactPerson ? meetingInfos[0]?.contactName || data.tourLeader : data.tourLeader;
+  const groupLeaderPhone = !meetingInfos[0]?.isContactPerson ? meetingInfos[0]?.contactPhone || data.tourLeaderPhone : data.tourLeaderPhone;
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -163,14 +163,6 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
                 </div>
               </div>
             )}
-            {groupIndex === undefined && (meeting.contactName || meeting.contactPhone) && (
-              <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
-                <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
-                <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
-                  {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
-                </p>
-              </div>
-            )}
             {meeting.map && (
               <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
                 <div
@@ -192,6 +184,19 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
                   />
                 </div>
                 <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
+              </div>
+            )}
+            {(groupIndex === undefined || meeting.isContactPerson) && (meeting.contactName || meeting.contactPhone) && (
+              <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
+                <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                    {meeting.isContactPerson ? '聯繫人' : '領隊'}
+                  </p>
+                  <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
+                    {[meeting.contactName, meeting.contactPhone].filter(Boolean).join('｜')}
+                  </p>
+                </div>
               </div>
             )}
 

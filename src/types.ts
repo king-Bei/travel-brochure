@@ -258,6 +258,7 @@ export interface MeetingInfo {
   people?: string;
   contactName?: string;
   contactPhone?: string;
+  isContactPerson?: boolean; // 勾選為聯繫人；未勾選則視為該組領隊
   map?: string;
   mapSize?: 'small' | 'medium' | 'large' | 'huge'; // 新增：集合地圖顯示大小
 }

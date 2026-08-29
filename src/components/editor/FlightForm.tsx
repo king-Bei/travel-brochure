@@ -40,7 +40,7 @@ export function FlightForm() {
     saveMeetingInfos([...meetingInfos, { id: crypto.randomUUID(), point: '', time: '', people: '', contactName: '', contactPhone: '', map: '' }]);
   };
 
-  const updateMeetingInfo = (index: number, field: 'point' | 'time' | 'people' | 'contactName' | 'contactPhone' | 'map' | 'mapSize', value: string) => {
+  const updateMeetingInfo = (index: number, field: 'point' | 'time' | 'people' | 'contactName' | 'contactPhone' | 'isContactPerson' | 'map' | 'mapSize', value: string | boolean) => {
     saveMeetingInfos(meetingInfos.map((item, itemIndex) =>
       itemIndex === index ? { ...item, [field]: value } : item
     ));
@@ -204,28 +204,6 @@ export function FlightForm() {
                     placeholder="例如：王小明、陳美麗／A 車旅客／自行前往人員"
                   />
                 </div>
-                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClassName}>此組領隊</label>
-                    <input
-                      type="text"
-                      value={meeting.contactName || ''}
-                      onChange={(e) => updateMeetingInfo(index, 'contactName', e.target.value)}
-                      className={inputClassName}
-                      placeholder="例如：王小明領隊"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClassName}>領隊電話</label>
-                    <input
-                      type="tel"
-                      value={meeting.contactPhone || ''}
-                      onChange={(e) => updateMeetingInfo(index, 'contactPhone', e.target.value)}
-                      className={inputClassName}
-                      placeholder="例如：0912-345-678"
-                    />
-                  </div>
-                </div>
                 <div className="md:col-span-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <label className={labelClassName}>此集合地點地圖</label>
@@ -252,6 +230,43 @@ export function FlightForm() {
                     primaryColor={data.theme.primary}
                     compact
                   />
+                </div>
+                <div className="md:col-span-3 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
+                  <div>
+                    <p className="text-xs font-bold text-gray-700">人員身分</p>
+                    <p className="text-[10px] text-gray-400">未勾選為領隊，勾選後改為聯繫人</p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-blue-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={meeting.isContactPerson || false}
+                      onChange={(e) => updateMeetingInfo(index, 'isContactPerson', e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    聯繫人
+                  </label>
+                </div>
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClassName}>{meeting.isContactPerson ? '聯繫人姓名' : '此組領隊'}</label>
+                    <input
+                      type="text"
+                      value={meeting.contactName || ''}
+                      onChange={(e) => updateMeetingInfo(index, 'contactName', e.target.value)}
+                      className={inputClassName}
+                      placeholder={meeting.isContactPerson ? '例如：王小明' : '例如：王小明領隊'}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClassName}>{meeting.isContactPerson ? '聯繫人電話' : '領隊電話'}</label>
+                    <input
+                      type="tel"
+                      value={meeting.contactPhone || ''}
+                      onChange={(e) => updateMeetingInfo(index, 'contactPhone', e.target.value)}
+                      className={inputClassName}
+                      placeholder="例如：0912-345-678"
+                    />
+                  </div>
                 </div>
 
               </div>
