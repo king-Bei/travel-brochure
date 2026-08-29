@@ -183,11 +183,20 @@ export function EBookView() {
       let hasContent = false;
 
       if (id === 'flight') {
-        hasContent = ((data.flights?.length || 0) > 0) || !!(data.meetingPoint || data.meetingTime || data.tourLeader);
+        hasContent = ((data.flights?.length || 0) > 0) || !!(data.meetingInfos?.length || data.meetingPoint || data.meetingTime || data.tourLeader);
         if (hasContent) {
           const flightsCount = Array.isArray(data.flights) ? data.flights.length : 0;
+          const meetingGroupCount = data.meetingInfos?.length || 0;
           const needsSplit = flightsCount > 3;
-          if (needsSplit) {
+          if (meetingGroupCount > 1) {
+            Array.from({ length: meetingGroupCount }).forEach((_, groupIndex) => {
+              p.push({
+                id: `flight-group-${groupIndex + 1}`,
+                label: `航班與集合－第 ${groupIndex + 1} 組`,
+                component: <FlightPage subPage="all" groupIndex={groupIndex} />
+              });
+            });
+          } else if (needsSplit) {
             p.push({
               id: 'flight-info',
               label: '航班資訊',

@@ -11,6 +11,7 @@ export interface FlightInfo {
   duration?: string;
   flightDuration?: string; // 新增：飛行總時數 (e.g. 12h 30m)
   type: 'outbound' | 'middle' | 'return'; // 新增：航段類型
+  groupIndex?: number; // 所屬集合組別（0 起算）；舊資料未設定時依輸入順序平均分組
 }
 
 export interface Hotel {

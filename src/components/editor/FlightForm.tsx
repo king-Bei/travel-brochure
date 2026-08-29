@@ -142,6 +142,7 @@ export function FlightForm() {
             labelClassName={labelClassName}
             inputClassName={inputClassName}
             primaryColor={data.theme.primary}
+            meetingGroupCount={meetingInfos.length}
           />
         ))}
 
@@ -205,17 +206,17 @@ export function FlightForm() {
                 </div>
                 <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClassName}>集合聯繫人</label>
+                    <label className={labelClassName}>此組領隊</label>
                     <input
                       type="text"
                       value={meeting.contactName || ''}
                       onChange={(e) => updateMeetingInfo(index, 'contactName', e.target.value)}
                       className={inputClassName}
-                      placeholder="例如：王領隊"
+                      placeholder="例如：王小明領隊"
                     />
                   </div>
                   <div>
-                    <label className={labelClassName}>聯繫電話</label>
+                    <label className={labelClassName}>領隊電話</label>
                     <input
                       type="tel"
                       value={meeting.contactPhone || ''}
@@ -269,8 +270,10 @@ export function FlightForm() {
 }
 
 function SegmentEditor({
-  flight, index, total, updateSegment, removeSegment, moveSegment, handleLogoUpload, labelClassName, inputClassName, primaryColor
+  flight, index, total, updateSegment, removeSegment, moveSegment, handleLogoUpload, labelClassName, inputClassName, primaryColor, meetingGroupCount
 }: any) {
+  const automaticGroupSize = Math.max(1, Math.ceil(total / Math.max(meetingGroupCount, 1)));
+  const effectiveGroupIndex = flight.groupIndex ?? Math.min(Math.floor(index / automaticGroupSize), Math.max(meetingGroupCount - 1, 0));
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles[0]) handleLogoUpload(index, acceptedFiles[0]);
   }, [index, handleLogoUpload]);
@@ -311,6 +314,18 @@ function SegmentEditor({
             <option value="middle">中轉航班</option>
             <option value="return">回程航班</option>
           </select>
+          {meetingGroupCount > 1 && (
+            <select
+              value={effectiveGroupIndex}
+              onChange={(e) => updateSegment(index, 'groupIndex', Number(e.target.value))}
+              className="bg-blue-50 border border-blue-100 rounded-lg px-2 py-1 text-xs font-bold text-blue-700 outline-none cursor-pointer"
+              title="選擇此航班要顯示在哪一組頁面"
+            >
+              {Array.from({ length: meetingGroupCount }).map((_, groupIndex) => (
+                <option key={groupIndex} value={groupIndex}>第 {groupIndex + 1} 組</option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button onClick={() => moveSegment(index, 'up')} disabled={index === 0} className="p-1.5 text-gray-400 hover:text-blue-500 disabled:opacity-20 hover:bg-white rounded-lg transition-all"><ChevronUp size={16} /></button>

@@ -4,12 +4,12 @@ import { Plane, MapPin, Users, Clock, Phone, AlertCircle, ZoomIn, X } from 'luci
 import { PageWrapper } from './PageWrapper';
 import { FlightInfo, MeetingInfo } from '../../types';
 
-export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 'meeting' }) {
+export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 'flights' | 'meeting'; groupIndex?: number }) {
   const { data } = useBrochure();
   const [previewMap, setPreviewMap] = useState<{ src: string; title: string } | null>(null);
 
   // 1. Data Migration: 同步編輯器的邏輯，確保預覽也能顯示舊格式資料
-  const flights = useMemo(() => {
+  const allFlights = useMemo(() => {
     if (Array.isArray(data.flights)) {
       return data.flights;
     }
@@ -23,7 +23,7 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
     return [];
   }, [data.flights]);
 
-  const meetingInfos = useMemo<MeetingInfo[]>(() => {
+  const allMeetingInfos = useMemo<MeetingInfo[]>(() => {
     if (data.meetingInfos?.length) {
       return data.meetingInfos
         .map((item, index) => index === 0 && !item.map && data.meetingMap ? { ...item, map: data.meetingMap } : item)
@@ -34,6 +34,21 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
     }
     return [];
   }, [data.meetingInfos, data.meetingPoint, data.meetingTime, data.meetingMap]);
+
+  const groupCount = Math.max(allMeetingInfos.length, 1);
+  const flights = useMemo(() => {
+    if (groupIndex === undefined || groupCount <= 1) return allFlights;
+    const automaticGroupSize = Math.max(1, Math.ceil(allFlights.length / groupCount));
+    return allFlights.filter((flight, index) => {
+      const assignedGroup = flight.groupIndex ?? Math.min(Math.floor(index / automaticGroupSize), groupCount - 1);
+      return assignedGroup === groupIndex;
+    });
+  }, [allFlights, groupCount, groupIndex]);
+  const meetingInfos = groupIndex === undefined
+    ? allMeetingInfos
+    : allMeetingInfos.slice(groupIndex, groupIndex + 1);
+  const groupLeader = meetingInfos[0]?.contactName || data.tourLeader;
+  const groupLeaderPhone = meetingInfos[0]?.contactPhone || data.tourLeaderPhone;
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -149,7 +164,7 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
                 </div>
               </div>
             )}
-            {(meeting.contactName || meeting.contactPhone) && (
+            {groupIndex === undefined && (meeting.contactName || meeting.contactPhone) && (
               <div className="col-span-2 bg-white px-2 py-1.5 rounded-lg border border-gray-100 flex items-center gap-2">
                 <Phone size={11} className="flex-shrink-0" style={{ color: data.theme.primary }} />
                 <p className="dynamic-text font-semibold text-gray-700 leading-tight break-words">
@@ -202,13 +217,13 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
           <div className="col-span-1 sm:col-span-2 pb-1 border-b border-gray-50 mb-0.5 grid grid-cols-2 gap-x-4">
             <div className="space-y-0.5">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">領隊</p>
-              <p className="dynamic-text font-black text-gray-900 leading-none">{data.tourLeader || '敬請期待'}</p>
+              <p className="dynamic-text font-black text-gray-900 leading-none">{groupLeader || '敬請期待'}</p>
             </div>
-            {data.tourLeaderPhone && (
+            {groupLeaderPhone && (
               <div className="space-y-0.5">
                 <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">領隊手機號碼</p>
                 <p className="dynamic-text font-black tracking-wider leading-none" style={{ color: data.theme.primary }}>
-                  {data.tourLeaderPhone}
+                  {groupLeaderPhone}
                 </p>
               </div>
             )}
@@ -358,4 +373,3 @@ export function FlightPage({ subPage = 'all' }: { subPage?: 'all' | 'flights' | 
     </>
   );
 }
-

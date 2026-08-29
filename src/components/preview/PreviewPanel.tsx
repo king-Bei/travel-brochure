@@ -79,7 +79,9 @@ export function PreviewPanel() {
   const visibleSections = currentOrder.filter(id => data.tocSettings?.[id] !== false);
 
   const scrollToSection = (id: string) => {
-    const targetId = id === 'flight' && (data.flights?.length || 0) > 3 ? 'flight-info' : id;
+    const targetId = id === 'flight' && (data.meetingInfos?.length || 0) > 1
+      ? 'flight-group-1'
+      : id === 'flight' && (data.flights?.length || 0) > 3 ? 'flight-info' : id;
     const element = previewScrollRef.current?.querySelector<HTMLElement>(`#preview-section-${targetId}`);
     if (element) {
       const container = previewScrollRef.current;
@@ -156,9 +158,23 @@ export function PreviewPanel() {
     visibleSections.forEach((id) => {
       if (id === 'flight') {
         const flightsCount = Array.isArray(data.flights) ? data.flights.length : 0;
+        const meetingGroupCount = data.meetingInfos?.length || 0;
         const needsSplit = flightsCount > 3;
 
-        if (needsSplit) {
+        if (meetingGroupCount > 1) {
+          Array.from({ length: meetingGroupCount }).forEach((_, groupIndex) => {
+            list.push({
+              id: `flight-group-${groupIndex + 1}`,
+              title: `航班與集合資訊－第 ${groupIndex + 1} 組`,
+              component: (side) => (
+                <PageSideContext.Provider value={side}>
+                  <FlightPage subPage="all" groupIndex={groupIndex} />
+                </PageSideContext.Provider>
+              ),
+            });
+            sectionPageIndex++;
+          });
+        } else if (needsSplit) {
           list.push({
             id: 'flight-info',
             title: 'Flight Info Page',
