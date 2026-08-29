@@ -1,12 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useBrochure } from '../../context/BrochureContext';
-import { Plane, MapPin, Users, Clock, Phone, AlertCircle, ZoomIn, X } from 'lucide-react';
+import { Plane, MapPin, Users, Clock, Phone, AlertCircle } from 'lucide-react';
 import { PageWrapper } from './PageWrapper';
 import { FlightInfo, MeetingInfo } from '../../types';
 
 export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 'flights' | 'meeting'; groupIndex?: number }) {
   const { data } = useBrochure();
-  const [previewMap, setPreviewMap] = useState<{ src: string; title: string } | null>(null);
 
   // 1. Data Migration: 同步編輯器的邏輯，確保預覽也能顯示舊格式資料
   const allFlights = useMemo(() => {
@@ -175,8 +174,7 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
             {meeting.map && (
               <div className="col-span-2 bg-gray-100/50 p-1.5 rounded-xl border border-gray-200">
                 <div
-                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center cursor-pointer group/map relative transition-all"
-                  onClick={() => setPreviewMap({ src: meeting.map!, title: `集合地點 ${index + 1} 地圖` })}
+                  className="bg-white rounded-lg overflow-hidden shadow-inner flex items-center justify-center"
                   style={{
                     height: meeting.mapSize === 'small' ? '140px'
                       : meeting.mapSize === 'medium' ? '200px'
@@ -190,13 +188,8 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
                   <img
                     src={meeting.map}
                     alt={`集合地圖 ${index + 1}`}
-                    className="block max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-300 group-hover/map:scale-105"
+                    className="block max-w-full max-h-full w-auto h-auto object-contain"
                   />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/map:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="bg-white/90 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-md">
-                      <ZoomIn size={14} /> 點擊全螢幕放大地圖
-                    </span>
-                  </div>
                 </div>
                 <p className="text-center text-[9px] font-bold text-gray-400 mt-1 tracking-widest uppercase">集合地點 {index + 1} 地圖</p>
               </div>
@@ -339,36 +332,6 @@ export function FlightPage({ subPage = 'all', groupIndex }: { subPage?: 'all' | 
             {meetingSection}
           </div>
         </PageWrapper>
-      )}
-
-      {/* 集合地圖 Lightbox Modal */}
-      {previewMap && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 cursor-pointer select-none"
-          onClick={() => setPreviewMap(null)}
-        >
-          <div
-            className="relative max-w-5xl max-h-[90vh] bg-white/10 rounded-2xl p-2 border border-white/20 shadow-2xl flex flex-col items-center overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-full flex items-center justify-between px-3 py-2 text-white border-b border-white/10 mb-2">
-              <span className="font-bold text-sm truncate">{previewMap.title}</span>
-              <button
-                onClick={() => setPreviewMap(null)}
-                className="p-1 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1 text-xs"
-              >
-                <X size={18} /> 關閉 (ESC)
-              </button>
-            </div>
-            <div className="overflow-auto flex items-center justify-center max-h-[80vh] w-full p-2">
-              <img
-                src={previewMap.src}
-                alt={previewMap.title}
-                className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
       )}
     </>
   );

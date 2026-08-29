@@ -16,6 +16,7 @@ const Management = lazy(() => import('./components/Management').then(m => ({ def
 const EbookManagement = lazy(() => import('./components/EbookManagement').then(m => ({ default: m.EbookManagement })));
 const EBookView = lazy(() => import('./components/preview/EBookView').then(m => ({ default: m.EBookView })));
 const EBookShelf = lazy(() => import('./components/preview/EBookShelf').then(m => ({ default: m.EBookShelf })));
+const AUTO_SAVE_IDLE_MS = 20_000;
 
 function PageLoader() {
   return (
@@ -63,7 +64,7 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
     return () => window.removeEventListener('brochure-remote-conflict', handleRemoteConflict);
   }, []);
 
-  // 3 秒防抖自動儲存
+  // 最後一次修改後靜置 20 秒才自動儲存；持續輸入會重新計時。
   useEffect(() => {
     // 初始掛載時不觸發儲存
     if (isFirstMount.current) {
@@ -121,10 +122,14 @@ function InnerApp({ currentId, currentUser, onBackToDashboard }: { currentId: st
           console.error('自動儲存同步失敗:', result.error);
           setSaveStatus('unsaved');
         }
+      } catch (error) {
+        // 網路或同步程序直接拋出例外時，不能讓畫面永久停在「儲存中」。
+        console.error('自動儲存發生例外:', error);
+        setSaveStatus('unsaved');
       } finally {
         finishSave();
       }
-    }, 3000);
+    }, AUTO_SAVE_IDLE_MS);
 
     return () => clearTimeout(timer);
   }, [data, currentId, hasConflict, markSaved, beginSave, finishSave]);
